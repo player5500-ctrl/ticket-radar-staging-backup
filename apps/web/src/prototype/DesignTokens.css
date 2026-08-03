@@ -1,0 +1,525 @@
+/* Prototype Design Tokens & 3D Visual Styles */
+@import "https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap";
+
+:root {
+  /* Wawatype / Playful Rounded Font */
+  --proto-font: "Zen Maru Gothic", "Kiwi Maru", "DFGirl-Medium", "Chalkboard SE", "Comic Sans MS", system-ui, sans-serif;
+  
+  /* High Saturation & Contrast Palette */
+  --proto-bg-dark: #060b17;
+  --proto-bg-card: rgba(14, 26, 48, 0.92);
+  --proto-bg-card-hover: rgba(22, 40, 74, 0.96);
+  --proto-border: rgba(0, 242, 254, 0.3);
+  --proto-border-strong: rgba(0, 242, 254, 0.8);
+  
+  /* Neon Accents */
+  --proto-neon-cyan: #00f2fe;
+  --proto-neon-blue: #4facfe;
+  --proto-neon-purple: #b83280;
+  --proto-neon-violet: #a855f7;
+  --proto-neon-yellow: #ffd166;
+  --proto-neon-pink: #ff2a6d;
+  --proto-neon-green: #00f5d4;
+  --proto-neon-orange: #ff9f1c;
+
+  /* Status Colors (High Contrast) */
+  --proto-status-announced-bg: rgba(79, 172, 254, 0.2);
+  --proto-status-announced-fg: #4facfe;
+  --proto-status-presale-bg: rgba(168, 85, 247, 0.25);
+  --proto-status-presale-fg: #e9d5ff;
+  --proto-status-onsale-bg: rgba(0, 245, 212, 0.25);
+  --proto-status-onsale-fg: #00f5d4;
+  --proto-status-soldout-bg: rgba(255, 42, 109, 0.25);
+  --proto-status-soldout-fg: #ff7597;
+  
+  /* Glassmorphism & 3D Shadow Tokens */
+  --proto-glass-blur: blur(18px);
+  --proto-shadow-glow: 0 0 30px rgba(0, 242, 254, 0.35);
+  --proto-shadow-pink-glow: 0 0 30px rgba(255, 42, 109, 0.4);
+  --proto-shadow-3d-card: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.25),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.6),
+    0 14px 40px rgba(0, 0, 0, 0.75);
+}
+
+.proto-shell {
+  font-family: var(--proto-font);
+  background-color: var(--proto-bg-dark);
+  color: #f1f5f9;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  /* 3D Blueprint Grid + Glowing Waves Background */
+  background-image: 
+    radial-gradient(circle at 80% 12%, rgba(168, 85, 247, 0.22), transparent 45%),
+    radial-gradient(circle at 15% 85%, rgba(0, 242, 254, 0.18), transparent 40%),
+    linear-gradient(rgba(0, 242, 254, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 242, 254, 0.07) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+}
+
+/* Wawatype Global Class */
+.proto-wawatype {
+  font-family: var(--proto-font);
+  letter-spacing: 0.02em;
+}
+
+/* Header with 3D Bevel Line */
+.proto-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(6, 11, 23, 0.88);
+  backdrop-filter: var(--proto-glass-blur);
+  border-bottom: 2.5px solid var(--proto-neon-cyan);
+  box-shadow: 
+    0 6px 25px rgba(0, 0, 0, 0.6),
+    0 0 15px rgba(0, 242, 254, 0.3);
+}
+
+.proto-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.proto-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+/* 3D Sphere Logo Badge */
+.proto-logo-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2.5px solid var(--proto-neon-cyan);
+  background: radial-gradient(circle at 35% 35%, var(--proto-neon-purple), #040914);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 
+    inset 0 3px 6px rgba(255, 255, 255, 0.4),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.7),
+    0 8px 20px rgba(0, 242, 254, 0.4);
+  animation: proto-pulse 3s infinite alternate;
+}
+
+@keyframes proto-pulse {
+  0% { box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.4), 0 0 12px var(--proto-neon-cyan); transform: scale(1); }
+  100% { box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.6), 0 0 25px var(--proto-neon-pink); transform: scale(1.08); }
+}
+
+.proto-logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.proto-logo-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffffff, var(--proto-neon-cyan), var(--proto-neon-yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.proto-logo-subtitle {
+  font-size: 0.68rem;
+  color: var(--proto-neon-blue);
+  letter-spacing: 0.1em;
+  font-weight: 900;
+}
+
+/* 3D Nav Switcher Pill */
+.proto-mode-pill {
+  background: linear-gradient(180deg, rgba(255, 42, 109, 0.35) 0%, rgba(168, 85, 247, 0.45) 100%);
+  border: 1.5px solid var(--proto-neon-pink);
+  border-top: 2px solid rgba(255, 255, 255, 0.4);
+  color: var(--proto-neon-yellow);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 
+    0 4px 0 #991b1b,
+    0 8px 16px rgba(255, 42, 109, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: all 0.15s ease;
+}
+
+.proto-mode-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #991b1b, 0 12px 22px rgba(255, 42, 109, 0.5);
+}
+
+.proto-mode-pill:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #991b1b, 0 4px 10px rgba(255, 42, 109, 0.3);
+}
+
+/* Main Content Container */
+.proto-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px 110px 16px;
+}
+
+/* 3D Mobile Bottom Navigation (5 items) */
+.proto-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 74px;
+  background: rgba(6, 11, 23, 0.95);
+  backdrop-filter: var(--proto-glass-blur);
+  border-top: 2.5px solid var(--proto-neon-cyan);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  box-shadow: 
+    0 -10px 35px rgba(0, 0, 0, 0.9),
+    0 -2px 10px rgba(0, 242, 254, 0.3);
+}
+
+.proto-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 900;
+  gap: 4px;
+  min-height: 48px;
+  min-width: 48px;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.proto-nav-item--active {
+  color: var(--proto-neon-cyan);
+  text-shadow: 0 0 12px var(--proto-neon-cyan);
+}
+
+.proto-nav-item--active .proto-nav-icon {
+  transform: translateY(-4px) scale(1.25);
+  filter: drop-shadow(0 4px 10px var(--proto-neon-cyan));
+}
+
+.proto-nav-icon {
+  font-size: 1.45rem;
+  transition: transform 0.2s ease;
+}
+
+/* 3D Cards & Volumetric Glass Containers */
+.proto-card {
+  background: linear-gradient(145deg, rgba(16, 28, 54, 0.92), rgba(8, 16, 32, 0.88));
+  backdrop-filter: var(--proto-glass-blur);
+  border: 1.5px solid rgba(0, 242, 254, 0.3);
+  border-top: 2px solid rgba(255, 255, 255, 0.25);
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: var(--proto-shadow-3d-card);
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.proto-card:hover {
+  border-color: var(--proto-neon-cyan);
+  box-shadow: 
+    inset 0 1px 4px rgba(255, 255, 255, 0.35),
+    0 0 25px rgba(0, 242, 254, 0.35),
+    0 18px 45px rgba(0, 0, 0, 0.85);
+  transform: translateY(-5px) scale(1.01);
+}
+
+/* 3D Pushable Buttons (44x44 min) */
+.proto-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 22px;
+  border-radius: 16px;
+  font-family: var(--proto-font);
+  font-weight: 900;
+  font-size: 0.96rem;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: none;
+  outline: none;
+  position: relative;
+  user-select: none;
+}
+
+.proto-btn-primary {
+  background: linear-gradient(180deg, #00f2fe 0%, #4facfe 100%);
+  color: #040914;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 5px 0 #0284c7,
+    0 10px 22px rgba(0, 242, 254, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.proto-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #0284c7, 0 14px 28px rgba(0, 242, 254, 0.6);
+}
+
+.proto-btn-primary:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #0284c7, 0 4px 10px rgba(0, 242, 254, 0.3);
+}
+
+.proto-btn-battle {
+  background: linear-gradient(180deg, #ff4d6d 0%, #ff2a6d 100%);
+  color: #ffffff;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 6px 0 #9f1239,
+    0 14px 30px rgba(255, 42, 109, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  font-size: 1.08rem;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  animation: proto-battle-glow 2s infinite alternate;
+}
+
+@keyframes proto-battle-glow {
+  0% { box-shadow: 0 6px 0 #9f1239, 0 0 15px var(--proto-neon-pink); }
+  100% { box-shadow: 0 6px 0 #9f1239, 0 0 35px var(--proto-neon-yellow); }
+}
+
+.proto-btn-battle:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #9f1239, 0 5px 12px rgba(255, 42, 109, 0.4);
+}
+
+.proto-btn-secondary {
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.35) 0%, rgba(126, 34, 206, 0.45) 100%);
+  border: 1.5px solid var(--proto-neon-violet);
+  border-top: 2px solid rgba(255, 255, 255, 0.4);
+  color: #f3e8ff;
+  box-shadow: 
+    0 5px 0 #581c87,
+    0 8px 18px rgba(168, 85, 247, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.proto-btn-secondary:hover {
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.5) 0%, rgba(126, 34, 206, 0.6) 100%);
+  box-shadow: 0 7px 0 #581c87, 0 12px 24px rgba(168, 85, 247, 0.5);
+}
+
+.proto-btn-secondary:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #581c87, 0 4px 10px rgba(168, 85, 247, 0.2);
+}
+
+.proto-btn-ghost {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1.5px solid var(--proto-border);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  box-shadow: 
+    0 4px 0 #0f172a,
+    0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+.proto-btn-ghost:hover {
+  border-color: var(--proto-neon-cyan);
+  color: var(--proto-neon-cyan);
+  box-shadow: 0 6px 0 #0f172a, 0 0 15px rgba(0, 242, 254, 0.3);
+}
+
+.proto-btn-ghost:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0f172a;
+}
+
+/* 3D Status Badges with Icon + Volumetric Fill */
+.proto-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  border: 1.5px solid currentColor;
+  box-shadow: 
+    inset 0 2px 4px rgba(255, 255, 255, 0.25),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4),
+    0 4px 10px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.proto-badge-announced {
+  background: linear-gradient(180deg, rgba(79, 172, 254, 0.3) 0%, rgba(2, 132, 199, 0.4) 100%);
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.proto-badge-presale {
+  background: linear-gradient(180deg, rgba(168, 85, 247, 0.35) 0%, rgba(126, 34, 206, 0.45) 100%);
+  color: #f3e8ff;
+  border-color: #c084fc;
+}
+
+.proto-badge-onsale {
+  background: linear-gradient(180deg, rgba(0, 245, 212, 0.35) 0%, rgba(13, 148, 136, 0.45) 100%);
+  color: #2dd4bf;
+  border-color: #2dd4bf;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3), 0 0 15px rgba(45, 212, 191, 0.4);
+}
+
+.proto-badge-soldout {
+  background: linear-gradient(180deg, rgba(255, 42, 109, 0.35) 0%, rgba(190, 18, 60, 0.45) 100%);
+  color: #fb7185;
+  border-color: #ff2a6d;
+}
+
+.proto-badge-warning {
+  background: linear-gradient(180deg, rgba(255, 209, 102, 0.3) 0%, rgba(217, 119, 6, 0.4) 100%);
+  color: #fde047;
+  border-color: #fde047;
+}
+
+/* 3D Volumetric Disclaimer Warning Box */
+.proto-disclaimer {
+  background: linear-gradient(145deg, rgba(255, 209, 102, 0.12), rgba(217, 119, 6, 0.08));
+  border: 2px solid var(--proto-neon-yellow);
+  border-top: 2.5px solid rgba(255, 255, 255, 0.4);
+  border-radius: 18px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  color: #fff3bf;
+  margin-bottom: 22px;
+  box-shadow: 
+    inset 0 1px 2px rgba(255, 255, 255, 0.2),
+    0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.proto-disclaimer-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* Hero Section */
+.proto-hero {
+  position: relative;
+  padding: 24px 0 16px 0;
+}
+
+.proto-hero-title {
+  font-size: 2.1rem;
+  font-weight: 900;
+  line-height: 1.25;
+  margin: 10px 0;
+  background: linear-gradient(135deg, #ffffff 20%, var(--proto-neon-cyan), var(--proto-neon-yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
+}
+
+/* 3D Modal Wizard */
+.proto-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(2, 6, 15, 0.88);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.proto-modal-content {
+  width: min(560px, 100%);
+  background: linear-gradient(145deg, rgba(16, 28, 54, 0.96), rgba(6, 11, 23, 0.96));
+  border: 2.5px solid var(--proto-neon-cyan);
+  border-top: 3px solid rgba(255, 255, 255, 0.4);
+  border-radius: 28px;
+  padding: 26px;
+  box-shadow: 
+    inset 0 2px 4px rgba(255, 255, 255, 0.3),
+    0 0 60px rgba(0, 242, 254, 0.45),
+    0 25px 60px rgba(0, 0, 0, 0.9);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* 3D Step Wizard Navigation Dots */
+.proto-wizard-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  position: relative;
+}
+
+.proto-wizard-step-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 2.5px solid #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  z-index: 2;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.proto-wizard-step-dot--active {
+  background: radial-gradient(circle at 35% 35%, var(--proto-neon-cyan), #0284c7);
+  border-color: #ffffff;
+  color: #040914;
+  box-shadow: 
+    inset 0 2px 4px rgba(255, 255, 255, 0.5),
+    0 0 20px var(--proto-neon-cyan);
+}
+
+.proto-wizard-step-dot--completed {
+  background: radial-gradient(circle at 35% 35%, var(--proto-neon-violet), #6b21a8);
+  border-color: #ffffff;
+  color: #fff;
+  box-shadow: 0 0 15px var(--proto-neon-violet);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .proto-hero-title {
+    font-size: 1.7rem;
+  }
+  .proto-container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}

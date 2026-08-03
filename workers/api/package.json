@@ -1,0 +1,33 @@
+{
+  "name": "@ticket-radar/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bundle": "vite build --config vite.worker.config.ts --configLoader runner",
+    "dev": "pnpm bundle && cross-env WRANGLER_LOG_PATH=.wrangler/logs/wrangler.log wrangler dev --no-bundle --ip 127.0.0.1 --port 8787",
+    "build": "pnpm bundle && cross-env WRANGLER_LOG_PATH=.wrangler/logs/wrangler.log wrangler deploy --dry-run --no-bundle --outdir dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "db:migrate:local": "cross-env WRANGLER_LOG_PATH=.wrangler/logs/wrangler.log wrangler d1 migrations apply ticket-radar-db --local",
+    "db:seed:local": "cross-env WRANGLER_LOG_PATH=.wrangler/logs/wrangler.log wrangler d1 execute ticket-radar-db --local --file seeds/seed.sql"
+  },
+  "dependencies": {
+    "@ticket-radar/shared": "workspace:*",
+    "hono": "^4.9.2",
+    "zod": "^3.25.76"
+  },
+  "dependenciesMeta": {
+    "@ticket-radar/shared": {
+      "injected": true
+    }
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260722.1",
+    "cross-env": "^10.0.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.2",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.29.1"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@ticket-radar/platform-adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ticket-radar/shared": "workspace:*"
+  },
+  "dependenciesMeta": {
+    "@ticket-radar/shared": {
+      "injected": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

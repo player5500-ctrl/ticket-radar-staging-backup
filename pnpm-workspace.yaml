@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+  - workers/*
+
+nodeLinker: hoisted
+injectWorkspacePackages: true
+
+allowBuilds:
+  esbuild: true
+  workerd: true

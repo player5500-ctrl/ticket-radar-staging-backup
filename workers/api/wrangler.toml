@@ -1,0 +1,58 @@
+name = "ticket-radar-api"
+main = "dist-worker/index.js"
+compatibility_date = "2026-07-29"
+
+[vars]
+ENVIRONMENT = "development"
+ALLOW_DEMO_AUTH = "true"
+DEMO_USER_ID = "user-demo"
+CORS_ORIGIN = "http://127.0.0.1:5173"
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ticket-radar-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[env.staging]
+name = "ticket-radar-api-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+ALLOW_DEMO_AUTH = "false"
+DEMO_USER_ID = ""
+# 保留同源以外的 CORS 設定：PWA 已改走 Pages 同源 /api/*（不再需要 CORS），
+# 但直接用瀏覽器打 Worker 網址做測試的情境仍會用到，且 Origin 比對同時是 CSRF 防線。
+CORS_ORIGIN = "https://ticket-radar-web-staging.pages.dev"
+ACCESS_TEAM_DOMAIN = "royal-hall-5179.cloudflareaccess.com"
+# ⚠️ 需人工補一筆：API 改走 Pages 同源 /api/* 後，Worker 收到的
+# Cf-Access-Jwt-Assertion 是「Pages 網域那個 Access Application」簽的，aud 與下面這個
+# API 網域的 AUD 不同。請把 Pages 網域 Access Application 的 Audience tag 用逗號追加，
+# 例如：ACCESS_AUD = "<pages-app-aud>,6f5d05d1...f73e"
+# 兩個都留可讓「直接呼叫 Worker 網址」的舊測試路徑也繼續通。
+ACCESS_AUD = "b73abd06ea8eedf56d2d31163208cac8c7ca391f411d6678c924d2b0ab1b22d5,6f5d05d11df1e094b7319a0aa97dd24788cb3c85ee0852866747466f9e83f73e"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "ticket-radar-db-staging"
+database_id = "4cca7519-2ad0-45e6-91d5-156e11098782"
+migrations_dir = "migrations"
+
+[env.production]
+name = "ticket-radar-api"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+ALLOW_DEMO_AUTH = "false"
+DEMO_USER_ID = ""
+CORS_ORIGIN = "https://replace-with-production-domain.invalid"
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "ticket-radar-db-production"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

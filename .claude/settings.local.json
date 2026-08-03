@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Set-Location \"D:\\\\cowork files\\\\projects\\\\18_ticket-radar\\\\apps\\\\web\"; node \"..\\\\..\\\\node_modules\\\\vite\\\\bin\\\\vite.js\" build --configLoader runner; \"EXIT=$LASTEXITCODE\")",
+      "PowerShell(Set-Location \"D:\\\\cowork files\\\\projects\\\\18_ticket-radar\\\\workers\\\\api\"; node \"..\\\\..\\\\node_modules\\\\vite\\\\bin\\\\vite.js\" build --config vite.worker.config.ts --configLoader runner 2>&1 | Select-Object -Last 6; \"BUNDLE_EXIT=$LASTEXITCODE\")",
+      "PowerShell(Set-Location \"D:\\\\cowork files\\\\projects\\\\18_ticket-radar\"; node \"node_modules\\\\@playwright\\\\test\\\\cli.js\" test --reporter=list 2>&1 | Select-Object -Last 40; \"EXIT=$LASTEXITCODE\")"
+    ]
+  }
+}

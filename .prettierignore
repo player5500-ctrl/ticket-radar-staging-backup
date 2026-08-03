@@ -1,0 +1,12 @@
+node_modules/
+node_modules-*/
+_bak-*/
+dist/
+dist-worker/
+coverage/
+playwright-report/
+playwright-report-staging/
+test-results/
+output/
+.wrangler/
+**/.wrangler/

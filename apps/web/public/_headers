@@ -1,0 +1,15 @@
+# connect-src 只留 'self'：API 已改走同源 /api/*（見 functions/api/[[path]].ts）。
+# 附帶好處是 Access session 失效時，fetch 被導向 cloudflareaccess.com 會直接被 CSP
+# 擋掉並立刻失敗，而不是長時間 pending 造成畫面無限 loading。
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; manifest-src 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:
+  Permissions-Policy: camera=(), geolocation=(), microphone=(), payment=(), usb=()
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: public, max-age=0, must-revalidate

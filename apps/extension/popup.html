@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>追票雷達資料組</title>
+    <style>
+      body {
+        width: 320px;
+        margin: 0;
+        padding: 18px;
+        background: #07111f;
+        color: #eaf1f8;
+        font:
+          14px system-ui,
+          "Microsoft JhengHei";
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 8px;
+      }
+      p {
+        color: #9cb2c5;
+        line-height: 1.5;
+      }
+      label {
+        display: grid;
+        gap: 5px;
+        margin: 10px 0;
+        color: #c9d8e5;
+        font-size: 12px;
+      }
+      input {
+        padding: 9px;
+        border: 1px solid #33495f;
+        border-radius: 8px;
+        color: #eef5fb;
+        background: #0c192a;
+      }
+      button {
+        width: 100%;
+        min-height: 40px;
+        margin-top: 10px;
+        border: 0;
+        border-radius: 8px;
+        background: #1ed7c5;
+        color: #041311;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      button.secondary {
+        border: 1px solid #1ed7c5;
+        background: transparent;
+        color: #1ed7c5;
+      }
+      .notice {
+        padding: 10px;
+        border-radius: 8px;
+        background: #172437;
+        font-size: 12px;
+      }
+      .status {
+        min-height: 20px;
+        color: #ffcf5a;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>追票雷達資料組</h1>
+    <p class="notice">
+      僅在本機受控 Demo
+      頁，依你的明確點擊填入姓名、Email、手機。絕不填入密碼、OTP、卡號、CVV 或 CAPTCHA。
+    </p>
+    <form id="profile-form">
+      <label>顯示名稱<input name="label" maxlength="40" required /></label
+      ><label>購票人姓名<input name="purchaserName" maxlength="80" required /></label
+      ><label>Email<input name="email" type="email" required /></label
+      ><label>手機<input name="phone" inputmode="tel" required /></label
+      ><label
+        >PIN（至少 6 碼，不保存）<input
+          name="pin"
+          type="password"
+          minlength="6"
+          required /></label
+      ><button type="submit">加密儲存於此裝置</button>
+    </form>
+    <button id="fill" class="secondary" type="button">依我的指示填入 Demo 頁</button>
+    <button id="capture" class="secondary" type="button">遮罩後保存成功頁截圖</button>
+    <p id="status" class="status" role="status"></p>
+    <script type="module" src="/src/popup.ts"></script>
+  </body>
+</html>

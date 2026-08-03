@@ -1,0 +1,51 @@
+name = "ticket-radar-api"
+main = "dist-worker/index.js"
+compatibility_date = "2026-07-29"
+
+[vars]
+ENVIRONMENT = "development"
+ALLOW_DEMO_AUTH = "true"
+DEMO_USER_ID = "user-demo"
+CORS_ORIGIN = "http://127.0.0.1:5173"
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ticket-radar-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[env.staging]
+name = "ticket-radar-api-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+ALLOW_DEMO_AUTH = "false"
+DEMO_USER_ID = ""
+CORS_ORIGIN = "https://ticket-radar-web-staging.pages.dev"
+ACCESS_TEAM_DOMAIN = "royal-hall-5179.cloudflareaccess.com"
+ACCESS_AUD = "6f5d05d11df1e094b7319a0aa97dd24788cb3c85ee0852866747466f9e83f73e"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "ticket-radar-db-staging"
+database_id = "4cca7519-2ad0-45e6-91d5-156e11098782"
+migrations_dir = "migrations"
+
+[env.production]
+name = "ticket-radar-api"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+ALLOW_DEMO_AUTH = "false"
+DEMO_USER_ID = ""
+CORS_ORIGIN = "https://replace-with-production-domain.invalid"
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "ticket-radar-db-production"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

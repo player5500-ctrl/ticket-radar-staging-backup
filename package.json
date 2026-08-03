@@ -1,0 +1,38 @@
+{
+  "name": "ticket-radar",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @ticket-radar/api --filter @ticket-radar/web dev",
+    "dev:web": "pnpm --filter @ticket-radar/web dev",
+    "dev:api": "pnpm --filter @ticket-radar/api dev",
+    "db:migrate:local": "pnpm --filter @ticket-radar/api db:migrate:local",
+    "db:seed:local": "pnpm --filter @ticket-radar/api db:seed:local",
+    "db:setup:local": "pnpm db:migrate:local && pnpm db:seed:local",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "test:e2e": "pnpm db:setup:local && playwright test",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^24.2.1",
+    "cross-env": "^10.0.0",
+    "eslint": "^9.32.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1"
+  }
+}

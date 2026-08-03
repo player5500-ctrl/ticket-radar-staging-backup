@@ -1,0 +1,29 @@
+{
+  "name": "@ticket-radar/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build --configLoader runner",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ticket-radar/platform-adapters": "workspace:*",
+    "@ticket-radar/shared": "workspace:*"
+  },
+  "dependenciesMeta": {
+    "@ticket-radar/platform-adapters": {
+      "injected": true
+    },
+    "@ticket-radar/shared": {
+      "injected": true
+    }
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.322",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.2",
+    "vitest": "^3.2.4"
+  }
+}
