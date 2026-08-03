@@ -36,7 +36,7 @@ export function ProtoHomePage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const val = (e.target as HTMLInputElement).value;
-                navigate(val ? `/prototype/search?q=${encodeURIComponent(val)}` : "/prototype/search");
+                navigate(val ? `/search?q=${encodeURIComponent(val)}` : "/search");
               }
             }}
             style={{
@@ -53,7 +53,7 @@ export function ProtoHomePage() {
           />
           <button
             className="proto-btn proto-btn-primary"
-            onClick={() => navigate("/prototype/search")}
+            onClick={() => navigate("/search")}
           >
             ⌕ 搜尋
           </button>
@@ -100,7 +100,7 @@ export function ProtoHomePage() {
             {homeQuery.data.followedArtists.map((artist) => (
               <button
                 key={artist.id}
-                onClick={() => navigate(`/prototype/search?q=${encodeURIComponent(artist.name)}`)}
+                onClick={() => navigate(`/search?q=${encodeURIComponent(artist.name)}`)}
                 style={{
                   background: "rgba(168, 85, 247, 0.15)",
                   border: "1px solid var(--proto-neon-violet)",
@@ -134,7 +134,7 @@ export function ProtoHomePage() {
             </span>
             <h2 style={{ fontSize: "1.25rem", fontWeight: 900, margin: "2px 0 0 0" }}>⚡ 即將開賣賽道</h2>
           </div>
-          <Link to="/prototype/search" className="proto-btn proto-btn-ghost" style={{ minHeight: "36px", padding: "4px 12px", fontSize: "0.8rem" }}>
+          <Link to="/search" className="proto-btn proto-btn-ghost" style={{ minHeight: "36px", padding: "4px 12px", fontSize: "0.8rem" }}>
             查看全部 →
           </Link>
         </div>
@@ -180,7 +180,7 @@ export function ProtoHomePage() {
         </div>
         <button
           className="proto-btn proto-btn-battle"
-          onClick={() => navigate("/prototype/battle")}
+          onClick={() => navigate("/battle")}
         >
           🚀 進入作戰模式
         </button>

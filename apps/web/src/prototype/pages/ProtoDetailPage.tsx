@@ -36,7 +36,7 @@ export function ProtoDetailPage() {
     onSuccess: async () => {
       setIsWizardOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["ticket-tasks"] });
-      navigate("/prototype/tasks");
+      navigate("/tasks");
     },
   });
 
@@ -71,7 +71,7 @@ export function ProtoDetailPage() {
       <div className="proto-card" style={{ border: "2px solid var(--proto-neon-pink)", padding: "30px", textAlign: "center" }}>
         <h3 style={{ color: "var(--proto-neon-pink)" }}>⚠️ 無法載入活動資料</h3>
         <p style={{ fontSize: "0.88rem", color: "#cbd5e1" }}>找不到此活動或網路發生問題。</p>
-        <Link to="/prototype/search" className="proto-btn proto-btn-secondary" style={{ marginTop: "12px" }}>
+        <Link to="/search" className="proto-btn proto-btn-secondary" style={{ marginTop: "12px" }}>
           ← 返回搜尋
         </Link>
       </div>
@@ -84,7 +84,7 @@ export function ProtoDetailPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* Top Breadcrumb Link */}
       <div>
-        <Link to="/prototype/search" style={{ color: "var(--proto-neon-cyan)", textDecoration: "none", fontSize: "0.85rem", fontWeight: 700 }}>
+        <Link to="/search" style={{ color: "var(--proto-neon-cyan)", textDecoration: "none", fontSize: "0.85rem", fontWeight: 700 }}>
           ← 返回搜尋列表
         </Link>
       </div>

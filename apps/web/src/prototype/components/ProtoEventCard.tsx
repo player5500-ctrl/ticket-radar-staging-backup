@@ -47,7 +47,7 @@ export function ProtoEventCard({ event }: { event: EventSummary }) {
         )}
 
         <Link
-          to={`/prototype/event/${event.id}`}
+          to={`/events/${event.id}`}
           className="proto-btn proto-btn-secondary"
           style={{ minHeight: "38px", padding: "6px 14px", fontSize: "0.82rem" }}
         >

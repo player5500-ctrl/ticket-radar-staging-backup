@@ -40,7 +40,7 @@ export function ProtoBattleModePage() {
           <span style={{ fontSize: "0.78rem", background: "var(--proto-neon-pink)", color: "#fff", padding: "2px 10px", borderRadius: "999px", fontWeight: 900 }}>
             ⚡ COMBAT READY 臨場作戰
           </span>
-          <Link to="/prototype" style={{ color: "#94a3b8", textDecoration: "none", fontSize: "0.8rem" }}>
+          <Link to="/" style={{ color: "#94a3b8", textDecoration: "none", fontSize: "0.8rem" }}>
             ✕ 離開作戰模式
           </Link>
         </div>
