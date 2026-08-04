@@ -61,6 +61,22 @@ export const CANDIDATE_STATUSES = [
   "expired",
 ] as const;
 export const CHANGE_SOURCES = ["sync", "admin", "user_report"] as const;
+export const VERIFICATION_STATUSES = [
+  "unverified",
+  "parsing_failed",
+  "ai_parsed",
+  "source_verified",
+  "admin_verified",
+  "rejected",
+  "duplicate_pending",
+  "published",
+] as const;
+export const DUPLICATE_RESULTS = [
+  "exact_match",
+  "probable_match",
+  "possible_match",
+  "no_match",
+] as const;
 
 const utc = z.string().datetime({ offset: true });
 const nullableUtc = utc.nullable();
@@ -81,6 +97,17 @@ export const DataSourceSchema = z.object({
   rateLimitPerHour: z.number().int().positive().nullable(),
   syncFrequencyMinutes: z.number().int().positive().nullable(),
   credibilityBaseScore: z.number().int().min(0).max(100),
+  enabled: z.boolean().default(false),
+  trustLevel: z.enum(["low", "medium", "high", "unverified"]).default("unverified"),
+  termsStatus: z
+    .enum(["unknown", "review_required", "allowed", "prohibited"])
+    .default("unknown"),
+  robotsStatus: z
+    .enum(["unknown", "review_required", "allowed", "prohibited"])
+    .default("unknown"),
+  timeoutMs: z.number().int().positive().default(5000),
+  retryLimit: z.number().int().nonnegative().default(1),
+  adapterVersion: z.string().default("phase0-placeholder"),
   lastSyncAtUtc: nullableUtc,
   lastSuccessAtUtc: nullableUtc,
   lastError: z.string().nullable(),
@@ -245,4 +272,39 @@ export const RawFetchResultSchema = z.object({
   nextCursor: z.string().nullable().optional(),
 });
 export type DataSource = z.infer<typeof DataSourceSchema>;
+export type RawEventSource = z.infer<typeof RawEventSourceSchema>;
 export type RawFetchResult = z.infer<typeof RawFetchResultSchema>;
+
+export const NormalizedEventCandidateSchema = z.object({
+  externalId: z.string().nullable(),
+  sourceId: z.string(),
+  sourceUrl: z.string().url(),
+  artistNames: z.array(z.string()),
+  title: z.string().min(1),
+  descriptionSummary: z.string().nullable(),
+  venueName: z.string().nullable(),
+  city: z.string().nullable(),
+  country: z.string().nullable(),
+  startDateTime: utc.nullable(),
+  endDateTime: utc.nullable(),
+  timezone: z.string().nullable(),
+  saleStartDateTime: utc.nullable(),
+  saleEndDateTime: utc.nullable(),
+  ticketPlatform: z.string().nullable(),
+  officialUrl: z.string().url().nullable(),
+  ticketUrl: z.string().url().nullable(),
+  imageUrl: z.string().url().nullable(),
+  eventStatus: z.string().nullable(),
+  confidenceScore: z.number().min(0).max(1),
+  verificationStatus: z.enum(VERIFICATION_STATUSES),
+  rawSourceId: z.string(),
+  parserVersion: z.string(),
+});
+export type NormalizedEventCandidate = z.infer<typeof NormalizedEventCandidateSchema>;
+export type SourceFetchInput = { since?: string; query?: string; limit: number };
+export type SourceHealthResult = {
+  ok: boolean;
+  checkedAtUtc: string;
+  error: string | null;
+};
+export type SourceFetchResult = RawFetchResult & { nextCursor: string | null };

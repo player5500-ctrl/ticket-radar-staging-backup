@@ -20,6 +20,9 @@ export class Phase0PlaceholderAdapter implements EventSourceAdapter {
   }): Promise<RawFetchResult> {
     return emptyResult();
   }
+  async healthCheck() {
+    return { ok: true, checkedAtUtc: new Date().toISOString(), error: null };
+  }
 }
 
 export const PHASE0_SOURCE_KEYS = [

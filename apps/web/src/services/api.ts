@@ -173,6 +173,11 @@ export const api = {
     });
     return request<SearchResponse>(`/api/v1/search?${params.toString()}`);
   },
+  requestLatestOfficialSearch: () =>
+    request<{ status: string; eligibleSourceCount: number; message: string }>(
+      "/api/v1/search/latest",
+      { method: "POST" },
+    ),
   event: (id: string) => request<EventDetail>(`/api/v1/events/${id}`),
   favorite: (id: string, shouldFavorite: boolean) =>
     request<{ eventId: string; isFavorited: boolean }>(

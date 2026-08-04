@@ -7,7 +7,7 @@ import type { AppEnv } from "./env";
 export function success<T, P extends string, I extends Input>(
   context: Context<AppEnv, P, I>,
   data: T,
-  status: 200 | 201 = 200,
+  status: 200 | 201 | 202 = 200,
 ) {
   const payload: ApiSuccess<T> = {
     data,

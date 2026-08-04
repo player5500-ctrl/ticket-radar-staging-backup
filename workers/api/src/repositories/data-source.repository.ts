@@ -22,6 +22,13 @@ type DataSourceRow = {
   notes: string | null;
   created_at_utc: string;
   updated_at_utc: string;
+  enabled?: number;
+  trust_level?: DataSource["trustLevel"];
+  terms_status?: DataSource["termsStatus"];
+  robots_status?: DataSource["robotsStatus"];
+  timeout_ms?: number;
+  retry_limit?: number;
+  adapter_version?: string;
 };
 
 const SELECT = `SELECT id,key,name,source_category,base_url,sync_method,status,agreement_status,requires_agreement,terms_url,terms_summary,contact_email,rate_limit_per_hour,sync_frequency_minutes,credibility_base_score,last_sync_at_utc,last_success_at_utc,last_error,notes,created_at_utc,updated_at_utc FROM data_sources`;
@@ -43,6 +50,13 @@ function mapRow(row: DataSourceRow): DataSource {
     rateLimitPerHour: row.rate_limit_per_hour,
     syncFrequencyMinutes: row.sync_frequency_minutes,
     credibilityBaseScore: row.credibility_base_score,
+    enabled: Boolean(row.enabled),
+    trustLevel: row.trust_level,
+    termsStatus: row.terms_status,
+    robotsStatus: row.robots_status,
+    timeoutMs: row.timeout_ms,
+    retryLimit: row.retry_limit,
+    adapterVersion: row.adapter_version,
     lastSyncAtUtc: row.last_sync_at_utc,
     lastSuccessAtUtc: row.last_success_at_utc,
     lastError: row.last_error,

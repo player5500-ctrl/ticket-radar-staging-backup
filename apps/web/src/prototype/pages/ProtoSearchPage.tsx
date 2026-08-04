@@ -44,6 +44,10 @@ export function ProtoSearchPage() {
     },
   });
 
+  const latestSearchMutation = useMutation({
+    mutationFn: () => api.requestLatestOfficialSearch(),
+  });
+
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(params);
     if (value) next.set(key, value);
@@ -52,14 +56,20 @@ export function ProtoSearchPage() {
   }
 
   const totalResults =
-    (searchResult.data?.events.length ?? 0) +
-    (searchResult.data?.artists.length ?? 0);
+    (searchResult.data?.events.length ?? 0) + (searchResult.data?.artists.length ?? 0);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* Header */}
       <div>
-        <span style={{ fontSize: "0.72rem", color: "var(--proto-neon-cyan)", fontWeight: 900, letterSpacing: "0.08em" }}>
+        <span
+          style={{
+            fontSize: "0.72rem",
+            color: "var(--proto-neon-cyan)",
+            fontWeight: 900,
+            letterSpacing: "0.08em",
+          }}
+        >
           SIGNAL SEARCH ENGINE
         </span>
         <h1 style={{ fontSize: "1.75rem", fontWeight: 900, margin: "2px 0 6px 0" }}>
@@ -110,7 +120,15 @@ export function ProtoSearchPage() {
         }}
       >
         <div>
-          <label style={{ display: "block", fontSize: "0.75rem", color: "#94a3b8", fontWeight: 700, marginBottom: "4px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "0.75rem",
+              color: "#94a3b8",
+              fontWeight: 700,
+              marginBottom: "4px",
+            }}
+          >
             📍 城市
           </label>
           <select
@@ -134,7 +152,15 @@ export function ProtoSearchPage() {
         </div>
 
         <div>
-          <label style={{ display: "block", fontSize: "0.75rem", color: "#94a3b8", fontWeight: 700, marginBottom: "4px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "0.75rem",
+              color: "#94a3b8",
+              fontWeight: 700,
+              marginBottom: "4px",
+            }}
+          >
             ⚡ 售票狀態
           </label>
           <select
@@ -159,7 +185,15 @@ export function ProtoSearchPage() {
         </div>
 
         <div>
-          <label style={{ display: "block", fontSize: "0.75rem", color: "#94a3b8", fontWeight: 700, marginBottom: "4px" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "0.75rem",
+              color: "#94a3b8",
+              fontWeight: 700,
+              marginBottom: "4px",
+            }}
+          >
             🎟️ 售票平台
           </label>
           <select
@@ -187,9 +221,14 @@ export function ProtoSearchPage() {
 
       {/* Loading state */}
       {searchResult.isPending && (
-        <div className="proto-card" style={{ textAlign: "center", padding: "40px 20px" }}>
+        <div
+          className="proto-card"
+          style={{ textAlign: "center", padding: "40px 20px" }}
+        >
           <div style={{ fontSize: "2rem", marginBottom: "10px" }}>🔍</div>
-          <h3 style={{ fontSize: "1.1rem", color: "var(--proto-neon-cyan)", margin: 0 }}>
+          <h3
+            style={{ fontSize: "1.1rem", color: "var(--proto-neon-cyan)", margin: 0 }}
+          >
             正在掃描全台售票資料與雷達訊號...
           </h3>
         </div>
@@ -197,8 +236,13 @@ export function ProtoSearchPage() {
 
       {/* Error state */}
       {searchResult.isError && (
-        <div className="proto-card" style={{ border: "2px solid var(--proto-neon-pink)", padding: "20px" }}>
-          <h3 style={{ color: "var(--proto-neon-pink)", margin: "0 0 6px 0" }}>⚠️ 搜尋連線中斷</h3>
+        <div
+          className="proto-card"
+          style={{ border: "2px solid var(--proto-neon-pink)", padding: "20px" }}
+        >
+          <h3 style={{ color: "var(--proto-neon-pink)", margin: "0 0 6px 0" }}>
+            ⚠️ 搜尋連線中斷
+          </h3>
           <p style={{ fontSize: "0.88rem", color: "#cbd5e1", margin: 0 }}>
             無法讀取演出資料，請確認網路連線或稍後再試。
           </p>
@@ -215,29 +259,96 @@ export function ProtoSearchPage() {
       {/* Results view */}
       {searchResult.data && (
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div style={{ fontSize: "0.9rem", color: "var(--proto-neon-cyan)", fontWeight: 700 }}>
+          <div
+            style={{
+              fontSize: "0.9rem",
+              color: "var(--proto-neon-cyan)",
+              fontWeight: 700,
+            }}
+          >
             🔍 找到 <strong>{totalResults}</strong> 個相關演出訊號
           </div>
+          {totalResults === 0 && (
+            <div
+              className="proto-card"
+              style={{ padding: "18px", border: "1px solid var(--proto-neon-cyan)" }}
+            >
+              <strong>目前資料庫尚未收錄此活動</strong>
+              <p style={{ fontSize: "0.82rem", color: "#cbd5e1" }}>
+                可建立「搜尋最新官方公告」同步工作；不會即時掃描全部來源，請以官方公告為準。
+              </p>
+              <button
+                className="proto-btn proto-btn-secondary"
+                onClick={() => latestSearchMutation.mutate()}
+                disabled={latestSearchMutation.isPending}
+              >
+                {latestSearchMutation.isPending ? "建立同步中…" : "搜尋最新官方公告"}
+              </button>
+            </div>
+          )}
 
           {/* Artists */}
           {searchResult.data.artists.length > 0 && (
             <section>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "10px" }}>🎤 歌手與團體</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
+              <h2 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "10px" }}>
+                🎤 歌手與團體
+              </h2>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: "12px",
+                }}
+              >
                 {searchResult.data.artists.map((artist) => (
-                  <div key={artist.id} className="proto-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div
+                    key={artist.id}
+                    className="proto-card"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <div style={{ width: "42px", height: "42px", borderRadius: "50%", background: "linear-gradient(135deg, var(--proto-neon-purple), var(--proto-neon-pink))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", fontWeight: 900 }}>
+                      <div
+                        style={{
+                          width: "42px",
+                          height: "42px",
+                          borderRadius: "50%",
+                          background:
+                            "linear-gradient(135deg, var(--proto-neon-purple), var(--proto-neon-pink))",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "1.2rem",
+                          fontWeight: 900,
+                        }}
+                      >
                         {artist.name.slice(0, 1)}
                       </div>
                       <div>
-                        <h3 style={{ fontSize: "1rem", fontWeight: 900, margin: 0 }}>{artist.name}</h3>
-                        <p style={{ fontSize: "0.75rem", color: "#94a3b8", margin: "2px 0 0 0" }}>{artist.aliases.join("・")}</p>
+                        <h3 style={{ fontSize: "1rem", fontWeight: 900, margin: 0 }}>
+                          {artist.name}
+                        </h3>
+                        <p
+                          style={{
+                            fontSize: "0.75rem",
+                            color: "#94a3b8",
+                            margin: "2px 0 0 0",
+                          }}
+                        >
+                          {artist.aliases.join("・")}
+                        </p>
                       </div>
                     </div>
                     <button
                       className={`proto-btn ${artist.isFollowed ? "proto-btn-ghost" : "proto-btn-primary"}`}
-                      style={{ minHeight: "36px", padding: "4px 12px", fontSize: "0.8rem" }}
+                      style={{
+                        minHeight: "36px",
+                        padding: "4px 12px",
+                        fontSize: "0.8rem",
+                      }}
                       onClick={() =>
                         followMutation.mutate({
                           id: artist.id,
@@ -255,18 +366,33 @@ export function ProtoSearchPage() {
 
           {/* Events */}
           <section>
-            <h2 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "10px" }}>🎟️ 活動節目</h2>
+            <h2 style={{ fontSize: "1.1rem", fontWeight: 900, marginBottom: "10px" }}>
+              🎟️ 活動節目
+            </h2>
             {searchResult.data.events.length > 0 ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "16px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                  gap: "16px",
+                }}
+              >
                 {searchResult.data.events.map((event) => (
                   <ProtoEventCard key={event.id} event={event} />
                 ))}
               </div>
             ) : (
-              <div className="proto-card" style={{ textAlign: "center", padding: "40px" }}>
+              <div
+                className="proto-card"
+                style={{ textAlign: "center", padding: "40px" }}
+              >
                 <span style={{ fontSize: "2.5rem" }}>📡</span>
-                <h3 style={{ fontSize: "1.1rem", margin: "10px 0 4px 0" }}>尚未找到符合的演出</h3>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8" }}>試著調整篩選條件或清空關鍵字再試試看。</p>
+                <h3 style={{ fontSize: "1.1rem", margin: "10px 0 4px 0" }}>
+                  尚未找到符合的演出
+                </h3>
+                <p style={{ fontSize: "0.85rem", color: "#94a3b8" }}>
+                  試著調整篩選條件或清空關鍵字再試試看。
+                </p>
               </div>
             )}
           </section>

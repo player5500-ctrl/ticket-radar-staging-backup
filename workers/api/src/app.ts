@@ -29,6 +29,7 @@ import { TicketTaskService } from "./services/ticket-task.service";
 import { D1PurchaseRepository } from "./repositories/purchase.repository";
 import { D1AdminRepository } from "./repositories/admin.repository";
 import { enforceRateLimit } from "./rate-limit";
+import { EventSyncRepository } from "./repositories/event-sync.repository";
 
 type AppDependencies = {
   repositoryFactory?: (database: D1Database) => EventRepository;
@@ -285,6 +286,68 @@ export function createApp(dependencies: AppDependencies = {}) {
     const repository = new D1AdminRepository(context.env.DB);
     await repository.recordOverviewAccess(adminId, context.get("requestId"));
     return success(context, await repository.overview());
+  });
+  app.post("/api/v1/search/latest", async (context) => {
+    const userId = await requireUserId(context);
+    if (userId instanceof Response) return userId;
+    const sources = await new EventSyncRepository(context.env.DB).listSources();
+    return success(
+      context,
+      {
+        status: "queued",
+        requestedBy: userId,
+        eligibleSourceCount: sources.filter(
+          (source) =>
+            source.enabled &&
+            source.status === "active" &&
+            ["agreed", "not_required"].includes(source.agreementStatus),
+        ).length,
+        message: "已建立同步工作；不會即時掃描未授權來源",
+      },
+      202,
+    );
+  });
+
+  app.get("/api/v1/admin/event-sources", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    return success(
+      context,
+      await new EventSyncRepository(context.env.DB).listSources(),
+    );
+  });
+  app.post("/api/v1/admin/event-sources/:sourceKey/sync", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    try {
+      return success(
+        context,
+        await new EventSyncRepository(context.env.DB).createManualJob(
+          adminId,
+          context.req.param("sourceKey"),
+        ),
+        202,
+      );
+    } catch (error) {
+      const code =
+        error instanceof Error && error.message === "SOURCE_NOT_FOUND"
+          ? "SOURCE_NOT_FOUND"
+          : "SOURCE_NOT_ELIGIBLE";
+      return failure(
+        context,
+        code === "SOURCE_NOT_FOUND" ? 404 : 409,
+        code,
+        "來源尚未通過啟用、條款與 robots 閘門",
+      );
+    }
+  });
+  app.get("/api/v1/admin/event-candidates", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    return success(
+      context,
+      await new EventSyncRepository(context.env.DB).listCandidates(),
+    );
   });
 
   app.get("/api/v1/auth/session", async (context) => {
