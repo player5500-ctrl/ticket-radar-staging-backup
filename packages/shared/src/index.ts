@@ -5,3 +5,4 @@ export * from "./ticket-task";
 export * from "./ticket-profile";
 export * from "./purchase-record";
 export * from "./admin";
+export * from "./event-source";

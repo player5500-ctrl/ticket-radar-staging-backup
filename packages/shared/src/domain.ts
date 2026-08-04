@@ -83,7 +83,8 @@ export type EventDetail = EventSummary & {
   organizerName: string;
   officialEventUrl: string | null;
   officialTicketUrl: string | null;
-  sourceType: "admin_manual" | "user_manual" | "official_url" | "mock_parser";
+  sourceType:
+    "admin_manual" | "user_manual" | "official_url" | "mock_parser" | "external_sync";
   sourceUrl: string | null;
   saleWindows: TicketSaleWindow[];
   isFavorited: boolean;

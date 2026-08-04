@@ -1,0 +1,41 @@
+import type { RawFetchResult } from "@ticket-radar/shared";
+import type { EventSourceAdapter } from "./types";
+
+const emptyResult = (): RawFetchResult => ({
+  records: [],
+  fetchedAtUtc: new Date().toISOString(),
+});
+
+export class Phase0PlaceholderAdapter implements EventSourceAdapter {
+  constructor(public readonly sourceKey: string) {}
+  async fetchRecent(_params: {
+    since?: string;
+    limit: number;
+  }): Promise<RawFetchResult> {
+    return emptyResult();
+  }
+  async fetchByQuery(_params: {
+    query: string;
+    limit: number;
+  }): Promise<RawFetchResult> {
+    return emptyResult();
+  }
+}
+
+export const PHASE0_SOURCE_KEYS = [
+  "kktix",
+  "tixcraft",
+  "ticket_plus",
+  "ibon",
+  "opentix",
+  "kham",
+  "era_ticket",
+  "live_nation_taiwan",
+  "tmc",
+  "kpmc",
+  "zepp_newtaipei",
+  "ticketmaster_discovery",
+  "songkick",
+] as const;
+export const createPhase0Adapters = (): EventSourceAdapter[] =>
+  PHASE0_SOURCE_KEYS.map((key) => new Phase0PlaceholderAdapter(key));
