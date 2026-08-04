@@ -552,12 +552,34 @@ export class EventSyncRepository {
       artistNames.map(async (name) =>
         this.db
           .prepare(
-            "SELECT id FROM artists WHERE normalized_name=? AND deleted_at_utc IS NULL LIMIT 1",
+            `SELECT a.id
+               FROM artists a
+               LEFT JOIN artist_aliases aa ON aa.artist_id=a.id
+              WHERE a.deleted_at_utc IS NULL
+                AND (a.normalized_name=? OR aa.normalized_alias=?)
+              LIMIT 1`,
           )
-          .bind(normalize(name))
+          .bind(normalize(name), normalize(name))
           .first<{ id: string }>(),
       ),
     );
+    let venueId: string | null = null;
+    if (typeof candidate.venue_raw_json === "string") {
+      try {
+        const venue = JSON.parse(candidate.venue_raw_json) as { name?: unknown };
+        if (typeof venue.name === "string" && candidate.city) {
+          const matchedVenue = await this.db
+            .prepare(
+              "SELECT id FROM venues WHERE normalized_name=? AND city=? AND deleted_at_utc IS NULL LIMIT 1",
+            )
+            .bind(normalize(venue.name), candidate.city)
+            .first<{ id: string }>();
+          venueId = matchedVenue?.id ?? null;
+        }
+      } catch {
+        venueId = null;
+      }
+    }
     const link = await this.db
       .prepare("SELECT id FROM event_source_links WHERE candidate_id=? LIMIT 1")
       .bind(input.candidateId)
@@ -565,7 +587,7 @@ export class EventSyncRepository {
     const statements: D1PreparedStatement[] = [
       this.db
         .prepare(
-          "INSERT INTO events (id,name,normalized_name,starts_at_utc,ends_at_utc,city,timezone,organizer_name,official_event_url,official_ticket_url,status,source_type,source_url,last_verified_at_utc,is_admin_verified,created_by_user_id,created_at_utc,updated_at_utc) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+          "INSERT INTO events (id,name,normalized_name,starts_at_utc,ends_at_utc,venue_id,city,timezone,organizer_name,official_event_url,official_ticket_url,status,source_type,source_url,last_verified_at_utc,is_admin_verified,created_by_user_id,created_at_utc,updated_at_utc) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         )
         .bind(
           eventId,
@@ -573,6 +595,7 @@ export class EventSyncRepository {
           candidate.normalized_name,
           candidate.starts_at_utc,
           candidate.ends_at_utc,
+          venueId,
           candidate.city,
           candidate.timezone,
           candidate.organizer_name,

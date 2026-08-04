@@ -278,7 +278,7 @@ export function AdminPage() {
                       onClick={() =>
                         candidateMerge.mutate({
                           candidateId: candidate.id,
-                          targetEventId: mergeTargets[candidate.id].trim(),
+                          targetEventId: mergeTargets[candidate.id]!.trim(),
                         })
                       }
                     >

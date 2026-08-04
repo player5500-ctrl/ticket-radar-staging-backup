@@ -13,7 +13,7 @@ import { resolveApiError } from "../services/apiErrors";
 import { downloadReminderIcs } from "../services/ics";
 import { eventStatusMeta, saleTypeLabels } from "../utils/status";
 
-const sourceLabels = {
+const sourceLabels: Record<string, string> = {
   admin_manual: "管理員手動建立",
   user_manual: "使用者手動建立",
   official_url: "官方網址",

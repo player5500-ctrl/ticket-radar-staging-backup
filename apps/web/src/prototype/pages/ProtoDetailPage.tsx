@@ -36,7 +36,7 @@ export function ProtoDetailPage() {
     onSuccess: async () => {
       setIsWizardOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["ticket-tasks"] });
-      navigate("/tasks");
+      void navigate("/tasks");
     },
   });
 
@@ -53,7 +53,7 @@ export function ProtoDetailPage() {
     },
     onSuccess: (reminder) => {
       downloadReminderIcs(reminder);
-      queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      void queryClient.invalidateQueries({ queryKey: ["reminders"] });
     },
   });
 

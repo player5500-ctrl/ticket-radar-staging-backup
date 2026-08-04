@@ -81,11 +81,12 @@ function toCandidate(
     item.offers && typeof item.offers === "object"
       ? (item.offers as Record<string, unknown>)
       : {};
+  const artistNames = extractArtistNames(item.performer ?? item.byArtist);
   return NormalizedEventCandidateSchema.parse({
     externalId: typeof item.identifier === "string" ? item.identifier : null,
     sourceId: input.sourceId,
     sourceUrl: input.sourceUrl,
-    artistNames: [],
+    artistNames,
     title,
     descriptionSummary:
       typeof item.description === "string" ? item.description.slice(0, 500) : null,
@@ -106,6 +107,16 @@ function toCandidate(
     verificationStatus: "ai_parsed",
     rawSourceId: input.rawSourceId,
     parserVersion: input.parserVersion ?? "jsonld-v1",
+  });
+}
+
+function extractArtistNames(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  return values.flatMap((entry) => {
+    if (typeof entry === "string") return [entry.trim()].filter(Boolean);
+    if (!entry || typeof entry !== "object") return [];
+    const name = (entry as Record<string, unknown>).name;
+    return typeof name === "string" ? [name.trim()].filter(Boolean) : [];
   });
 }
 function normalizeDate(value: unknown): string | null {

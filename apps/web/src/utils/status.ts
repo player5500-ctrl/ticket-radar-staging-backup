@@ -1,5 +1,6 @@
 import type { EventStatus } from "@ticket-radar/shared";
-import type { StatusTone } from "@ticket-radar/ui";
+
+type StatusTone = "info" | "success" | "warning" | "neutral" | "danger";
 
 export const eventStatusMeta: Record<EventStatus, { label: string; tone: StatusTone }> =
   {

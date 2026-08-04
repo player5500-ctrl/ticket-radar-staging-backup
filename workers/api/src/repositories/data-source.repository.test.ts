@@ -29,10 +29,10 @@ const row = (overrides: Record<string, unknown> = {}) => ({
 function dbFor(results: unknown[], first: unknown = null) {
   const prepare = vi.fn(() => ({
     bind: vi.fn(() => ({
-      first: vi.fn(async () => first),
-      all: vi.fn(async () => ({ results })),
+      first: vi.fn(() => first),
+      all: vi.fn(() => ({ results })),
     })),
-    all: vi.fn(async () => ({ results })),
+    all: vi.fn(() => ({ results })),
   }));
   return { prepare } as unknown as D1Database;
 }

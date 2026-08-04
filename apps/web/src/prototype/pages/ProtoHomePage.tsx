@@ -36,7 +36,7 @@ export function ProtoHomePage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const val = (e.target as HTMLInputElement).value;
-                navigate(val ? `/search?q=${encodeURIComponent(val)}` : "/search");
+                void navigate(val ? `/search?q=${encodeURIComponent(val)}` : "/search");
               }
             }}
             style={{

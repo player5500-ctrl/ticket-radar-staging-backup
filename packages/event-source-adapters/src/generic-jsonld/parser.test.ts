@@ -13,6 +13,11 @@ describe("generic JSON-LD event parser", () => {
     expect(result[0]?.title).toBe("BIGBANG");
     expect(result[0]?.startDateTime).toBe("2026-09-01T11:00:00.000Z");
   });
+  it("extracts performer names for alias resolution", () => {
+    const html = `<script type="application/ld+json">{"@type":"MusicEvent","name":"BIGBANG","startDate":"2026-09-01T19:00:00+08:00","performer":[{"@type":"MusicGroup","name":"BIGBANG"},{"name":"VIP Guest"}]}</script>`;
+    const result = extractJsonLdEvents(html, input);
+    expect(result[0]?.artistNames).toEqual(["BIGBANG", "VIP Guest"]);
+  });
   it("ignores invalid JSON and unknown types", () => {
     expect(
       extractJsonLdEvents(
