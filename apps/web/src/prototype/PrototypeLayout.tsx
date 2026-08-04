@@ -10,7 +10,7 @@ export function PrototypeLayout() {
       {/* Top Header */}
       <header className="proto-header">
         <div className="proto-header-inner">
-          <NavLink to="/prototype" className="proto-logo">
+          <NavLink to="/" className="proto-logo">
             <div className="proto-logo-badge">📡</div>
             <div className="proto-logo-text">
               <span className="proto-logo-title">追票雷達 Ticket Radar</span>
@@ -36,7 +36,7 @@ export function PrototypeLayout() {
       {/* Mobile Bottom Navigation Bar (5 Items) */}
       <nav className="proto-bottom-nav" aria-label="原型行動導覽列">
         <NavLink
-          to="/prototype"
+          to="/"
           end
           className={({ isActive }) =>
             `proto-nav-item ${isActive ? "proto-nav-item--active" : ""}`
@@ -47,7 +47,7 @@ export function PrototypeLayout() {
         </NavLink>
 
         <NavLink
-          to="/prototype/search"
+          to="/search"
           className={({ isActive }) =>
             `proto-nav-item ${isActive ? "proto-nav-item--active" : ""}`
           }
@@ -57,7 +57,7 @@ export function PrototypeLayout() {
         </NavLink>
 
         <NavLink
-          to="/prototype/tasks"
+          to="/tasks"
           className={({ isActive }) =>
             `proto-nav-item ${isActive ? "proto-nav-item--active" : ""}`
           }
@@ -67,7 +67,7 @@ export function PrototypeLayout() {
         </NavLink>
 
         <NavLink
-          to="/prototype/battle"
+          to="/battle"
           className={({ isActive }) =>
             `proto-nav-item ${isActive ? "proto-nav-item--active" : ""}`
           }
@@ -77,7 +77,7 @@ export function PrototypeLayout() {
         </NavLink>
 
         <NavLink
-          to="/prototype/records"
+          to="/records"
           className={({ isActive }) =>
             `proto-nav-item ${isActive ? "proto-nav-item--active" : ""}`
           }
