@@ -1,37 +1,39 @@
 import { describe, expect, it } from "vitest";
+import type { NormalizedEventCandidate } from "@ticket-radar/shared";
 import {
   ArtistAliasResolver,
   VenueResolver,
   classifyDuplicate,
   eventFingerprint,
 } from "./event-sync.service";
-const candidate = (overrides: Record<string, unknown> = {}) =>
-  ({
-    externalId: "x",
-    sourceId: "s",
-    sourceUrl: "https://example.com/x",
-    artistNames: ["BIGBANG"],
-    title: "Show",
-    descriptionSummary: null,
-    venueName: "TMC",
-    city: "Taipei",
-    country: "TW",
-    startDateTime: "2026-09-01T11:00:00.000Z",
-    endDateTime: null,
-    timezone: "Asia/Taipei",
-    saleStartDateTime: null,
-    saleEndDateTime: null,
-    ticketPlatform: null,
-    officialUrl: "https://example.com/x",
-    ticketUrl: null,
-    imageUrl: null,
-    eventStatus: null,
-    confidenceScore: 0.8,
-    verificationStatus: "ai_parsed",
-    rawSourceId: "r",
-    parserVersion: "v1",
-    ...overrides,
-  }) as any;
+const candidate = (
+  overrides: Partial<NormalizedEventCandidate> = {},
+): NormalizedEventCandidate => ({
+  externalId: "x",
+  sourceId: "s",
+  sourceUrl: "https://example.com/x",
+  artistNames: ["BIGBANG"],
+  title: "Show",
+  descriptionSummary: null,
+  venueName: "TMC",
+  city: "Taipei",
+  country: "TW",
+  startDateTime: "2026-09-01T11:00:00.000Z",
+  endDateTime: null,
+  timezone: "Asia/Taipei",
+  saleStartDateTime: null,
+  saleEndDateTime: null,
+  ticketPlatform: null,
+  officialUrl: "https://example.com/x",
+  ticketUrl: null,
+  imageUrl: null,
+  eventStatus: null,
+  confidenceScore: 0.8,
+  verificationStatus: "ai_parsed",
+  rawSourceId: "r",
+  parserVersion: "v1",
+  ...overrides,
+});
 describe("event sync core", () => {
   it("resolves multilingual aliases without unsafe auto merge", () => {
     const resolver = new ArtistAliasResolver(

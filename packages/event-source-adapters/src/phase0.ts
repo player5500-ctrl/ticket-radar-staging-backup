@@ -14,19 +14,16 @@ export class ManualSourceAdapter implements EventSourceAdapter {
   readonly sourceKey = "manual";
   readonly name = "Manual source";
   readonly sourceType = "manual" as const;
-  async fetchRecent(_params: {
-    since?: string;
-    limit: number;
-  }): Promise<RawFetchResult> {
-    return { records: [], fetchedAtUtc: new Date().toISOString() };
+  fetchRecent(params: { since?: string; limit: number }): Promise<RawFetchResult> {
+    void params;
+    return Promise.resolve({ records: [], fetchedAtUtc: new Date().toISOString() });
   }
-  async fetchByQuery(_params: {
-    query: string;
-    limit: number;
-  }): Promise<RawFetchResult> {
-    return { records: [], fetchedAtUtc: new Date().toISOString() };
+  fetchByQuery(params: { query: string; limit: number }): Promise<RawFetchResult> {
+    void params;
+    return Promise.resolve({ records: [], fetchedAtUtc: new Date().toISOString() });
   }
-  submit(url: string, _submittedBy: string): RawEventSource {
+  submit(url: string, submittedBy: string): RawEventSource {
+    void submittedBy;
     return {
       id: `raw-${crypto.randomUUID()}`,
       dataSourceId: "manual",
@@ -50,17 +47,13 @@ export class GenericJsonLdEventAdapter implements EventSourceAdapter {
     private readonly context: Phase0AdapterContext = {},
   ) {}
   readonly sourceType = "jsonld" as const;
-  async fetchRecent(_params: {
-    since?: string;
-    limit: number;
-  }): Promise<RawFetchResult> {
-    return { records: [], fetchedAtUtc: new Date().toISOString() };
+  fetchRecent(params: { since?: string; limit: number }): Promise<RawFetchResult> {
+    void params;
+    return Promise.resolve({ records: [], fetchedAtUtc: new Date().toISOString() });
   }
-  async fetchByQuery(_params: {
-    query: string;
-    limit: number;
-  }): Promise<RawFetchResult> {
-    return { records: [], fetchedAtUtc: new Date().toISOString() };
+  fetchByQuery(params: { query: string; limit: number }): Promise<RawFetchResult> {
+    void params;
+    return Promise.resolve({ records: [], fetchedAtUtc: new Date().toISOString() });
   }
   async fetchUrl(url: string): Promise<RawFetchResult> {
     const parsed = validatePublicUrl(url, this.context.allowedHosts);
@@ -104,19 +97,21 @@ export class GenericJsonLdEventAdapter implements EventSourceAdapter {
       clearTimeout(timeout);
     }
   }
-  async parse(raw: unknown) {
-    if (!raw || typeof raw !== "object") return [];
+  parse(raw: unknown) {
+    if (!raw || typeof raw !== "object") return Promise.resolve([]);
     const record = raw as { payload?: unknown; sourceUrl?: string };
     return typeof record.payload === "string"
-      ? extractJsonLdEvents(record.payload, {
-          sourceId: this.sourceKey,
-          sourceUrl: record.sourceUrl ?? "https://invalid.example",
-          rawSourceId: "unknown",
-        })
-      : [];
+      ? Promise.resolve(
+          extractJsonLdEvents(record.payload, {
+            sourceId: this.sourceKey,
+            sourceUrl: record.sourceUrl ?? "https://invalid.example",
+            rawSourceId: "unknown",
+          }),
+        )
+      : Promise.resolve([]);
   }
-  async normalize(candidate: unknown) {
-    return candidate;
+  normalize(candidate: unknown) {
+    return Promise.resolve(candidate);
   }
 }
 export class MockApiAdapter extends Phase0PlaceholderAdapter {
@@ -124,11 +119,8 @@ export class MockApiAdapter extends Phase0PlaceholderAdapter {
     super("mock_api");
   }
   readonly sourceType = "api" as const;
-  async fetchRecent(params: {
-    since?: string;
-    limit: number;
-  }): Promise<RawFetchResult> {
-    return {
+  fetchRecent(params: { since?: string; limit: number }): Promise<RawFetchResult> {
+    return Promise.resolve({
       records: [
         {
           externalId: `mock-${params.limit}`,
@@ -142,7 +134,7 @@ export class MockApiAdapter extends Phase0PlaceholderAdapter {
         },
       ],
       fetchedAtUtc: new Date().toISOString(),
-    };
+    });
   }
 }
 export function validatePublicUrl(value: string, allowedHosts?: string[]): URL {

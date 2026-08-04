@@ -14,6 +14,7 @@
     "db:seed:event-sources:local": "cross-env WRANGLER_LOG_PATH=.wrangler/logs/wrangler.log wrangler d1 execute ticket-radar-db --local --file seeds/event-sources.sql"
   },
   "dependencies": {
+    "@ticket-radar/event-source-adapters": "workspace:*",
     "@ticket-radar/shared": "workspace:*",
     "hono": "^4.9.2",
     "zod": "^3.25.76"

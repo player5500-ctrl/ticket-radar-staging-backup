@@ -199,6 +199,9 @@ importers:
 
   workers/api:
     dependencies:
+      "@ticket-radar/event-source-adapters":
+        specifier: workspace:*
+        version: link:../../packages/event-source-adapters
       "@ticket-radar/shared":
         specifier: workspace:*
         version: link:../../packages/shared

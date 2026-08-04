@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { secureHeaders } from "hono/secure-headers";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 
 import {
   reminderInputSchema,
@@ -10,6 +10,7 @@ import {
   ticketTaskInputSchema,
   ticketTaskUpdateSchema,
 } from "@ticket-radar/shared";
+import { extractJsonLdEvents } from "@ticket-radar/event-source-adapters";
 
 import {
   getOptionalUser,
@@ -308,6 +309,35 @@ export function createApp(dependencies: AppDependencies = {}) {
     );
   });
 
+  app.post("/api/v1/event-submissions", async (context) => {
+    const userId = await requireUserId(context);
+    if (userId instanceof Response) return userId;
+    const body = z
+      .object({
+        sourceUrl: z.string().url(),
+        rawPayload: z.string().max(1_000_000).nullable().optional(),
+      })
+      .parse(await context.req.json());
+    const url = new URL(body.sourceUrl);
+    if (
+      url.protocol !== "https:" ||
+      url.hostname === "localhost" ||
+      /^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(url.hostname)
+    )
+      return failure(
+        context,
+        422,
+        "SOURCE_URL_DENIED",
+        "僅接受可公開驗證的 HTTPS 官方網址",
+      );
+    const result = await new EventSyncRepository(context.env.DB).submitManualSource({
+      sourceUrl: url.toString(),
+      submittedByUserId: userId,
+      rawPayload: body.rawPayload ?? null,
+    });
+    return success(context, result, 201);
+  });
+
   app.get("/api/v1/admin/event-sources", async (context) => {
     const adminId = await requireAdminId(context);
     if (adminId instanceof Response) return adminId;
@@ -348,6 +378,91 @@ export function createApp(dependencies: AppDependencies = {}) {
       context,
       await new EventSyncRepository(context.env.DB).listCandidates(),
     );
+  });
+  app.post("/api/v1/admin/raw-event-sources/:rawSourceId/parse", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    const repository = new EventSyncRepository(context.env.DB);
+    const raw = await repository.getRawSource(
+      resourceIdSchema.parse(context.req.param("rawSourceId")),
+    );
+    if (!raw)
+      return failure(context, 404, "RAW_SOURCE_NOT_FOUND", "找不到原始來源資料");
+    if (!raw.rawPayload)
+      return failure(
+        context,
+        409,
+        "RAW_PAYLOAD_UNAVAILABLE",
+        "原始內容尚未提供，無法在 Phase 0 解析",
+      );
+    const normalized = extractJsonLdEvents(raw.rawPayload, {
+      sourceId: raw.dataSourceId,
+      sourceUrl: raw.sourceUrl,
+      rawSourceId: raw.id,
+    });
+    const viable = normalized.filter(
+      (candidate) => candidate.startDateTime && candidate.city && candidate.officialUrl,
+    );
+    if (!viable.length) {
+      await repository.markRawParseFailed(
+        raw.id,
+        "No publishable Event JSON-LD record with date, city, and official URL",
+      );
+      return failure(
+        context,
+        422,
+        "JSONLD_EVENT_INCOMPLETE",
+        "JSON-LD 缺少日期、城市或官方網址，已送人工補充",
+      );
+    }
+    const candidates = await Promise.all(
+      viable.map((candidate) =>
+        repository.createCandidateFromNormalized({
+          rawSourceId: raw.id,
+          sourceId: raw.dataSourceId,
+          sourceUrl: raw.sourceUrl,
+          externalId: candidate.externalId ?? raw.externalId,
+          title: candidate.title,
+          artistNames: candidate.artistNames,
+          venueName: candidate.venueName,
+          city: candidate.city,
+          startsAtUtc: candidate.startDateTime!,
+          endsAtUtc: candidate.endDateTime,
+          timezone: candidate.timezone ?? "Asia/Taipei",
+          organizerName:
+            candidate.sourceId === "src-manual-submission"
+              ? "Manual official URL review"
+              : null,
+          officialUrl: candidate.officialUrl,
+          ticketUrl: candidate.ticketUrl,
+          confidence: candidate.confidenceScore,
+          credibilityScore: raw.credibilityScore,
+        }),
+      ),
+    );
+    return success(context, { parsedBy: adminId, candidates }, 201);
+  });
+  app.post("/api/v1/admin/event-candidates/:candidateId/approve", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    try {
+      return success(
+        context,
+        await new EventSyncRepository(context.env.DB).approveCandidate({
+          candidateId: resourceIdSchema.parse(context.req.param("candidateId")),
+          adminUserId: adminId,
+          requestId: context.get("requestId"),
+        }),
+        201,
+      );
+    } catch {
+      return failure(
+        context,
+        409,
+        "CANDIDATE_NOT_PUBLISHABLE",
+        "候選活動需有日期、城市與主辦資訊，才能建立正式活動",
+      );
+    }
   });
 
   app.get("/api/v1/auth/session", async (context) => {

@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EventStatus, SearchQuery } from "@ticket-radar/shared";
 import { api } from "../../services/api";
 import { ProtoEventCard } from "../components/ProtoEventCard";
-import { ProtoStatusBadge } from "../components/ProtoStatusBadge";
 
 const statusOptions: { value: EventStatus | ""; label: string }[] = [
   { value: "", label: "全部售票狀態" },

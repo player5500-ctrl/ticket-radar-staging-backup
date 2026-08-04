@@ -8,20 +8,20 @@ const emptyResult = (): RawFetchResult => ({
 
 export class Phase0PlaceholderAdapter implements EventSourceAdapter {
   constructor(public readonly sourceKey: string) {}
-  async fetchRecent(_params: {
-    since?: string;
-    limit: number;
-  }): Promise<RawFetchResult> {
-    return emptyResult();
+  fetchRecent(params: { since?: string; limit: number }): Promise<RawFetchResult> {
+    void params;
+    return Promise.resolve(emptyResult());
   }
-  async fetchByQuery(_params: {
-    query: string;
-    limit: number;
-  }): Promise<RawFetchResult> {
-    return emptyResult();
+  fetchByQuery(params: { query: string; limit: number }): Promise<RawFetchResult> {
+    void params;
+    return Promise.resolve(emptyResult());
   }
-  async healthCheck() {
-    return { ok: true, checkedAtUtc: new Date().toISOString(), error: null };
+  healthCheck() {
+    return Promise.resolve({
+      ok: true,
+      checkedAtUtc: new Date().toISOString(),
+      error: null,
+    });
   }
 }
 
