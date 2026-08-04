@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatEventDate } from "@ticket-radar/shared";
 
@@ -23,6 +24,7 @@ const adapterStatusLabels = {
 
 export function AdminPage() {
   const queryClient = useQueryClient();
+  const [mergeTargets, setMergeTargets] = useState<Record<string, string>>({});
   const overview = useQuery({
     queryKey: ["admin-overview"],
     queryFn: api.adminOverview,
@@ -31,6 +33,47 @@ export function AdminPage() {
     mutationFn: ({ eventId, isVerified }: { eventId: string; isVerified: boolean }) =>
       api.setAdminEventVerified(eventId, isVerified),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-overview"] }),
+  });
+  const eventSources = useQuery({
+    queryKey: ["admin-event-sources"],
+    queryFn: api.adminEventSources,
+  });
+  const eventCandidates = useQuery({
+    queryKey: ["admin-event-candidates"],
+    queryFn: api.adminEventCandidates,
+  });
+  const refreshEventSync = () => {
+    void queryClient.invalidateQueries({ queryKey: ["admin-event-sources"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-event-candidates"] });
+    void queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+  };
+  const sourceUpdate = useMutation({
+    mutationFn: ({ sourceKey, enabled }: { sourceKey: string; enabled: boolean }) =>
+      api.updateAdminEventSource(sourceKey, { enabled }),
+    onSuccess: refreshEventSync,
+  });
+  const sourceSync = useMutation({
+    mutationFn: api.syncAdminEventSource,
+    onSuccess: refreshEventSync,
+  });
+  const candidateApprove = useMutation({
+    mutationFn: api.approveAdminEventCandidate,
+    onSuccess: refreshEventSync,
+  });
+  const candidateReject = useMutation({
+    mutationFn: (candidateId: string) =>
+      api.rejectAdminEventCandidate(candidateId, "Rejected during admin review"),
+    onSuccess: refreshEventSync,
+  });
+  const candidateMerge = useMutation({
+    mutationFn: ({
+      candidateId,
+      targetEventId,
+    }: {
+      candidateId: string;
+      targetEventId: string;
+    }) => api.mergeAdminEventCandidate(candidateId, targetEventId),
+    onSuccess: refreshEventSync,
   });
 
   if (overview.isLoading) {
@@ -117,6 +160,136 @@ export function AdminPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="admin-audit-panel" aria-labelledby="event-sources-heading">
+        <div className="section-heading">
+          <p className="section-heading__eyebrow">EVENT SOURCE CONTROL</p>
+          <h2 id="event-sources-heading">外部來源控制</h2>
+          <p>僅在條款、robots 與合作狀態皆已核准時，Worker 才允許啟用同步。</p>
+        </div>
+        {eventSources.isError ? (
+          <p>無法載入外部來源清單。</p>
+        ) : (
+          <ul className="admin-adapter-list">
+            {(eventSources.data ?? []).map((source) => (
+              <li key={source.key}>
+                <div>
+                  <strong>{source.name}</strong>
+                  <span>
+                    {source.sourceCategory} ・ {source.status} ・{" "}
+                    {source.agreementStatus}
+                  </span>
+                  <p>
+                    條款：{source.termsStatus}／robots：{source.robotsStatus}／信任：
+                    {source.trustLevel}
+                    {source.lastError ? "／最近同步失敗" : ""}
+                  </p>
+                </div>
+                <div className="admin-event-actions">
+                  <button
+                    className="tr-button tr-button--secondary"
+                    type="button"
+                    disabled={sourceUpdate.isPending}
+                    onClick={() =>
+                      sourceUpdate.mutate({
+                        sourceKey: source.key,
+                        enabled: !source.enabled,
+                      })
+                    }
+                  >
+                    {source.enabled ? "停用" : "啟用"}
+                  </button>
+                  <button
+                    className="tr-button tr-button--secondary"
+                    type="button"
+                    disabled={!source.enabled || sourceSync.isPending}
+                    onClick={() => sourceSync.mutate(source.key)}
+                  >
+                    手動排程同步
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="admin-audit-panel" aria-labelledby="event-candidates-heading">
+        <div className="section-heading">
+          <p className="section-heading__eyebrow">CANDIDATE REVIEW</p>
+          <h2 id="event-candidates-heading">活動候選審核</h2>
+          <p>候選活動必須經管理員核准、拒絕，或合併到既有活動後才會離開待審狀態。</p>
+        </div>
+        {eventCandidates.isError ? (
+          <p>無法載入活動候選清單。</p>
+        ) : (
+          <ul className="admin-event-list">
+            {(eventCandidates.data ?? []).map((candidate) => (
+              <li key={candidate.id}>
+                <div>
+                  <strong>{candidate.name}</strong>
+                  <span>
+                    {candidate.status} ・ {candidate.city} ・ {candidate.startsAtUtc}
+                  </span>
+                  {candidate.sourceUrl ? (
+                    <p>
+                      <a href={candidate.sourceUrl} rel="noreferrer" target="_blank">
+                        查看原始來源
+                      </a>
+                    </p>
+                  ) : null}
+                </div>
+                {candidate.status === "pending_review" ? (
+                  <div className="admin-event-actions">
+                    <button
+                      className="tr-button tr-button--secondary"
+                      disabled={candidateApprove.isPending}
+                      type="button"
+                      onClick={() => candidateApprove.mutate(candidate.id)}
+                    >
+                      核准
+                    </button>
+                    <button
+                      className="tr-button tr-button--secondary"
+                      disabled={candidateReject.isPending}
+                      type="button"
+                      onClick={() => candidateReject.mutate(candidate.id)}
+                    >
+                      拒絕
+                    </button>
+                    <input
+                      aria-label={`${candidate.name} 的既有活動 ID`}
+                      onChange={(event) =>
+                        setMergeTargets((current) => ({
+                          ...current,
+                          [candidate.id]: event.target.value,
+                        }))
+                      }
+                      placeholder="既有活動 ID"
+                      value={mergeTargets[candidate.id] ?? ""}
+                    />
+                    <button
+                      className="tr-button tr-button--secondary"
+                      disabled={
+                        candidateMerge.isPending || !mergeTargets[candidate.id]?.trim()
+                      }
+                      type="button"
+                      onClick={() =>
+                        candidateMerge.mutate({
+                          candidateId: candidate.id,
+                          targetEventId: mergeTargets[candidate.id].trim(),
+                        })
+                      }
+                    >
+                      合併
+                    </button>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="admin-audit-panel" aria-labelledby="audit-heading">

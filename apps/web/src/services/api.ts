@@ -14,6 +14,7 @@ import type {
   PurchaseRecordInput,
   AdminOverview,
   AdminEvent,
+  DataSource,
 } from "@ticket-radar/shared";
 
 /** 單一請求上限。超過就當成連線問題結束，避免 Access 互動式登入流程讓畫面無限 loading。 */
@@ -63,6 +64,28 @@ export type AuthSession = {
     displayName: string;
     role: "user" | "admin";
   };
+};
+
+export type AdminEventSource = DataSource;
+
+export type AdminEventCandidate = {
+  id: string;
+  name: string;
+  normalizedName: string;
+  startsAtUtc: string;
+  city: string;
+  status:
+    | "pending_review"
+    | "auto_verified"
+    | "confirmed"
+    | "rejected"
+    | "duplicate"
+    | "expired";
+  credibilityScore: number;
+  createdAtUtc: string;
+  rawSourceId: string;
+  matchedEventId: string | null;
+  sourceUrl: string | null;
 };
 
 /** 需要重新登入才可能恢復的錯誤碼（不含 ADMIN_REQUIRED——那是權限不足，不是未登入）。 */
@@ -223,6 +246,57 @@ export const api = {
     }),
   adminOverview: () =>
     request<AdminOverview>("/api/v1/admin/overview", {}, "admin-demo"),
+  adminEventSources: () =>
+    request<AdminEventSource[]>("/api/v1/admin/event-sources", {}, "admin-demo"),
+  updateAdminEventSource: (
+    sourceKey: string,
+    input: Partial<
+      Pick<AdminEventSource, "enabled" | "termsStatus" | "robotsStatus" | "trustLevel">
+    >,
+  ) =>
+    request<{ updated: true }>(
+      `/api/v1/admin/event-sources/${encodeURIComponent(sourceKey)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+      "admin-demo",
+    ),
+  syncAdminEventSource: (sourceKey: string) =>
+    request<{ id: string; status: string }>(
+      `/api/v1/admin/event-sources/${encodeURIComponent(sourceKey)}/sync`,
+      { method: "POST" },
+      "admin-demo",
+    ),
+  adminEventCandidates: () =>
+    request<AdminEventCandidate[]>("/api/v1/admin/event-candidates", {}, "admin-demo"),
+  approveAdminEventCandidate: (candidateId: string) =>
+    request<{ eventId: string }>(
+      `/api/v1/admin/event-candidates/${candidateId}/approve`,
+      { method: "POST" },
+      "admin-demo",
+    ),
+  rejectAdminEventCandidate: (candidateId: string, reason: string) =>
+    request<{ rejected: true }>(
+      `/api/v1/admin/event-candidates/${candidateId}/reject`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      },
+      "admin-demo",
+    ),
+  mergeAdminEventCandidate: (candidateId: string, targetEventId: string) =>
+    request<{ merged: true }>(
+      `/api/v1/admin/event-candidates/${candidateId}/merge`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetEventId }),
+      },
+      "admin-demo",
+    ),
   setAdminEventVerified: (eventId: string, isVerified: boolean) =>
     request<AdminEvent>(
       `/api/v1/admin/events/${eventId}/verification`,

@@ -346,6 +346,44 @@ export function createApp(dependencies: AppDependencies = {}) {
       await new EventSyncRepository(context.env.DB).listSources(),
     );
   });
+  app.patch("/api/v1/admin/event-sources/:sourceKey", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    try {
+      const body = z
+        .object({
+          enabled: z.boolean().optional(),
+          termsStatus: z
+            .enum(["unknown", "review_required", "allowed", "prohibited"])
+            .optional(),
+          robotsStatus: z
+            .enum(["unknown", "review_required", "allowed", "prohibited"])
+            .optional(),
+          trustLevel: z.enum(["low", "medium", "high", "unverified"]).optional(),
+        })
+        .refine((value) => Object.keys(value).length > 0, "至少提供一個來源控制欄位")
+        .parse(await context.req.json());
+      await new EventSyncRepository(context.env.DB).updateSourceControls(
+        context.req.param("sourceKey"),
+        body,
+        adminId,
+        context.get("requestId"),
+      );
+      return success(context, { updated: true });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return failure(context, 422, "VALIDATION_ERROR", "來源控制資料格式不正確");
+      }
+      return failure(
+        context,
+        error instanceof Error && error.message === "SOURCE_NOT_FOUND" ? 404 : 409,
+        error instanceof Error && error.message === "SOURCE_NOT_FOUND"
+          ? "SOURCE_NOT_FOUND"
+          : "SOURCE_NOT_ELIGIBLE",
+        "來源必須通過條款、robots 與授權閘門才能啟用",
+      );
+    }
+  });
   app.post("/api/v1/admin/event-sources/:sourceKey/sync", async (context) => {
     const adminId = await requireAdminId(context);
     if (adminId instanceof Response) return adminId;
@@ -378,6 +416,16 @@ export function createApp(dependencies: AppDependencies = {}) {
       context,
       await new EventSyncRepository(context.env.DB).listCandidates(),
     );
+  });
+  app.get("/api/v1/admin/event-candidates/:candidateId", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    const candidate = await new EventSyncRepository(context.env.DB).getCandidate(
+      resourceIdSchema.parse(context.req.param("candidateId")),
+    );
+    return candidate
+      ? success(context, candidate)
+      : failure(context, 404, "CANDIDATE_NOT_FOUND", "找不到候選活動");
   });
   app.post("/api/v1/admin/raw-event-sources/:rawSourceId/parse", async (context) => {
     const adminId = await requireAdminId(context);
@@ -461,6 +509,47 @@ export function createApp(dependencies: AppDependencies = {}) {
         409,
         "CANDIDATE_NOT_PUBLISHABLE",
         "候選活動需有日期、城市與主辦資訊，才能建立正式活動",
+      );
+    }
+  });
+  app.post("/api/v1/admin/event-candidates/:candidateId/reject", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    const body = z
+      .object({ reason: z.string().trim().min(1).max(500) })
+      .parse(await context.req.json());
+    try {
+      await new EventSyncRepository(context.env.DB).rejectCandidate(
+        resourceIdSchema.parse(context.req.param("candidateId")),
+        adminId,
+        context.get("requestId"),
+        body.reason,
+      );
+      return success(context, { rejected: true });
+    } catch {
+      return failure(context, 409, "CANDIDATE_NOT_REVIEWABLE", "候選活動目前不可拒絕");
+    }
+  });
+  app.post("/api/v1/admin/event-candidates/:candidateId/merge", async (context) => {
+    const adminId = await requireAdminId(context);
+    if (adminId instanceof Response) return adminId;
+    const body = z
+      .object({ targetEventId: resourceIdSchema })
+      .parse(await context.req.json());
+    try {
+      await new EventSyncRepository(context.env.DB).mergeCandidateIntoEvent(
+        resourceIdSchema.parse(context.req.param("candidateId")),
+        body.targetEventId,
+        adminId,
+        context.get("requestId"),
+      );
+      return success(context, { merged: true });
+    } catch {
+      return failure(
+        context,
+        409,
+        "CANDIDATE_MERGE_NOT_ALLOWED",
+        "候選活動或目標正式活動不可合併",
       );
     }
   });

@@ -18,6 +18,11 @@ export type CandidateApprovalInput = {
 const now = () => new Date().toISOString();
 const normalize = (value: string) =>
   value.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
+const normalizeContactEmail = (value: unknown) => {
+  if (typeof value !== "string") return null;
+  const email = value.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+};
 const contentHash = (payload: string) => {
   let hash = 2166136261;
   for (const char of payload) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
@@ -42,7 +47,7 @@ export class EventSyncRepository {
         requiresAgreement: Boolean(row.requires_agreement),
         termsUrl: row.terms_url,
         termsSummary: row.terms_summary,
-        contactEmail: row.contact_email,
+        contactEmail: normalizeContactEmail(row.contact_email),
         rateLimitPerHour: row.rate_limit_per_hour,
         syncFrequencyMinutes: row.sync_frequency_minutes,
         credibilityBaseScore: row.credibility_base_score,
@@ -105,15 +110,252 @@ export class EventSyncRepository {
       .run();
     return { id, status: "queued" };
   }
+
+  async updateSourceControls(
+    sourceKey: string,
+    input: {
+      enabled?: boolean | undefined;
+      termsStatus?:
+        "unknown" | "review_required" | "allowed" | "prohibited" | undefined;
+      robotsStatus?:
+        "unknown" | "review_required" | "allowed" | "prohibited" | undefined;
+      trustLevel?: "low" | "medium" | "high" | "unverified" | undefined;
+    },
+    actorUserId: string,
+    requestId: string,
+  ) {
+    const source = await this.db
+      .prepare(
+        "SELECT id,status,agreement_status,enabled,terms_status,robots_status,trust_level FROM data_sources WHERE key=?",
+      )
+      .bind(sourceKey)
+      .first<{
+        id: string;
+        status: string;
+        agreement_status: string;
+        enabled: number;
+        terms_status: string;
+        robots_status: string;
+        trust_level: string;
+      }>();
+    if (!source) throw new Error("SOURCE_NOT_FOUND");
+    const termsStatus = input.termsStatus ?? source.terms_status;
+    const robotsStatus = input.robotsStatus ?? source.robots_status;
+    const enabling = input.enabled === true;
+    if (
+      enabling &&
+      (source.status !== "active" ||
+        !["agreed", "not_required"].includes(source.agreement_status) ||
+        termsStatus !== "allowed" ||
+        robotsStatus !== "allowed")
+    )
+      throw new Error("SOURCE_NOT_ELIGIBLE");
+    const updatedAtUtc = now();
+    await this.db.batch([
+      this.db
+        .prepare(
+          "UPDATE data_sources SET enabled=?,terms_status=?,robots_status=?,trust_level=?,updated_at_utc=? WHERE id=?",
+        )
+        .bind(
+          input.enabled === undefined ? source.enabled : input.enabled ? 1 : 0,
+          termsStatus,
+          robotsStatus,
+          input.trustLevel ?? source.trust_level,
+          updatedAtUtc,
+          source.id,
+        ),
+      this.db
+        .prepare(
+          "INSERT INTO audit_logs (id,actor_user_id,action,entity_type,entity_id,request_id,before_summary_json,after_summary_json,created_at_utc) VALUES (?,?,?,?,?,?,?,?,?)",
+        )
+        .bind(
+          crypto.randomUUID(),
+          actorUserId,
+          "event_source.controls.update",
+          "data_source",
+          source.id,
+          requestId,
+          JSON.stringify({
+            enabled: Boolean(source.enabled),
+            termsStatus: source.terms_status,
+            robotsStatus: source.robots_status,
+            trustLevel: source.trust_level,
+          }),
+          JSON.stringify({
+            enabled:
+              input.enabled === undefined ? Boolean(source.enabled) : input.enabled,
+            termsStatus,
+            robotsStatus,
+            trustLevel: input.trustLevel ?? source.trust_level,
+          }),
+          updatedAtUtc,
+        ),
+    ]);
+  }
   async listCandidates(limit = 50) {
     return (
       await this.db
         .prepare(
-          "SELECT id,name,normalized_name AS normalizedName,starts_at_utc AS startsAtUtc,city,status,credibility_score AS credibilityScore,created_at_utc AS createdAtUtc FROM event_candidates ORDER BY created_at_utc DESC LIMIT ?",
+          "SELECT c.id,c.name,c.normalized_name AS normalizedName,c.starts_at_utc AS startsAtUtc,c.city,c.status,c.credibility_score AS credibilityScore,c.created_at_utc AS createdAtUtc,c.raw_event_source_id AS rawSourceId,c.matched_event_id AS matchedEventId,r.source_url AS sourceUrl FROM event_candidates c LEFT JOIN raw_event_sources r ON r.id=c.raw_event_source_id ORDER BY c.created_at_utc DESC LIMIT ?",
         )
         .bind(limit)
         .all()
     ).results;
+  }
+
+  async getCandidate(candidateId: string) {
+    return this.db
+      .prepare(
+        "SELECT c.id,c.name,c.status,c.city,c.starts_at_utc AS startsAtUtc,c.organizer_name AS organizerName,c.official_event_url AS officialEventUrl,c.official_ticket_url AS officialTicketUrl,c.credibility_score AS credibilityScore,c.confidence,c.raw_event_source_id AS rawSourceId,r.source_url AS sourceUrl,r.external_id AS externalId FROM event_candidates c LEFT JOIN raw_event_sources r ON r.id=c.raw_event_source_id WHERE c.id=?",
+      )
+      .bind(candidateId)
+      .first<{
+        id: string;
+        name: string;
+        status:
+          | "pending_review"
+          | "auto_verified"
+          | "confirmed"
+          | "rejected"
+          | "duplicate"
+          | "expired";
+        city: string | null;
+        startsAtUtc: string | null;
+        organizerName: string | null;
+        officialEventUrl: string | null;
+        officialTicketUrl: string | null;
+        credibilityScore: number;
+        confidence: number;
+        rawSourceId: string;
+        sourceUrl: string | null;
+        externalId: string | null;
+      }>();
+  }
+
+  async rejectCandidate(
+    candidateId: string,
+    adminUserId: string,
+    requestId: string,
+    reason: string,
+  ) {
+    const candidate = await this.getCandidate(candidateId);
+    if (!candidate || candidate.status !== "pending_review")
+      throw new Error("CANDIDATE_NOT_REVIEWABLE");
+    const decidedAtUtc = now();
+    await this.db.batch([
+      this.db
+        .prepare(
+          "UPDATE event_candidates SET status='rejected',updated_at_utc=? WHERE id=?",
+        )
+        .bind(decidedAtUtc, candidateId),
+      this.db
+        .prepare(
+          "INSERT INTO verification_reviews (id,candidate_id,reviewer_type,reviewer_user_id,decision,reason,decided_at_utc,created_at_utc) VALUES (?,?,?,?,?,?,?,?)",
+        )
+        .bind(
+          crypto.randomUUID(),
+          candidateId,
+          "admin",
+          adminUserId,
+          "reject",
+          reason,
+          decidedAtUtc,
+          decidedAtUtc,
+        ),
+      this.db
+        .prepare(
+          "INSERT INTO audit_logs (id,actor_user_id,action,entity_type,entity_id,request_id,after_summary_json,created_at_utc) VALUES (?,?,?,?,?,?,?,?)",
+        )
+        .bind(
+          crypto.randomUUID(),
+          adminUserId,
+          "event_candidate.reject",
+          "event_candidate",
+          candidateId,
+          requestId,
+          JSON.stringify({ reason }),
+          decidedAtUtc,
+        ),
+    ]);
+  }
+
+  async mergeCandidateIntoEvent(
+    candidateId: string,
+    targetEventId: string,
+    adminUserId: string,
+    requestId: string,
+  ) {
+    const candidate = await this.getCandidate(candidateId);
+    const event = await this.db
+      .prepare("SELECT id FROM events WHERE id=? AND deleted_at_utc IS NULL")
+      .bind(targetEventId)
+      .first<{ id: string }>();
+    if (!candidate || candidate.status !== "pending_review" || !event)
+      throw new Error("CANDIDATE_MERGE_NOT_ALLOWED");
+    const link = await this.db
+      .prepare("SELECT id FROM event_source_links WHERE candidate_id=? LIMIT 1")
+      .bind(candidateId)
+      .first<{ id: string }>();
+    const resolvedAtUtc = now();
+    const statements = [
+      this.db
+        .prepare(
+          "UPDATE event_candidates SET status='duplicate',matched_event_id=?,updated_at_utc=? WHERE id=?",
+        )
+        .bind(targetEventId, resolvedAtUtc, candidateId),
+      this.db
+        .prepare(
+          "INSERT INTO verification_reviews (id,candidate_id,reviewer_type,reviewer_user_id,decision,reason,decided_at_utc,created_at_utc) VALUES (?,?,?,?,?,?,?,?)",
+        )
+        .bind(
+          crypto.randomUUID(),
+          candidateId,
+          "admin",
+          adminUserId,
+          "approve",
+          "Merged into existing event",
+          resolvedAtUtc,
+          resolvedAtUtc,
+        ),
+      this.db
+        .prepare(
+          "INSERT INTO event_duplicates (id,candidate_a_id,existing_event_id,similarity_score,match_method,status,resolved_by,resolved_at_utc,created_at_utc) VALUES (?,?,?,?,?,?,?,?,?)",
+        )
+        .bind(
+          crypto.randomUUID(),
+          candidateId,
+          targetEventId,
+          1,
+          "admin_manual",
+          "confirmed_duplicate",
+          "admin",
+          resolvedAtUtc,
+          resolvedAtUtc,
+        ),
+      this.db
+        .prepare(
+          "INSERT INTO audit_logs (id,actor_user_id,action,entity_type,entity_id,request_id,after_summary_json,created_at_utc) VALUES (?,?,?,?,?,?,?,?)",
+        )
+        .bind(
+          crypto.randomUUID(),
+          adminUserId,
+          "event_candidate.merge",
+          "event",
+          targetEventId,
+          requestId,
+          JSON.stringify({ candidateId }),
+          resolvedAtUtc,
+        ),
+    ];
+    if (link)
+      statements.push(
+        this.db
+          .prepare(
+            "UPDATE event_source_links SET event_id=?,candidate_id=NULL,last_confirmed_at_utc=?,updated_at_utc=? WHERE id=?",
+          )
+          .bind(targetEventId, resolvedAtUtc, resolvedAtUtc, link.id),
+      );
+    await this.db.batch(statements);
   }
 
   async submitManualSource(input: ManualSubmissionInput) {
