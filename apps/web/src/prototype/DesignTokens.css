@@ -1,9 +1,9 @@
 /* Prototype Design Tokens & 3D Visual Styles */
-@import "https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap";
+@import "https://fonts.googleapis.com/css2?family=Huninn&family=Zen+Maru+Gothic:wght@400;700;900&display=swap";
 
 :root {
-  /* Wawatype / Playful Rounded Font */
-  --proto-font: "Zen Maru Gothic", "Kiwi Maru", "DFGirl-Medium", "Chalkboard SE", "Comic Sans MS", system-ui, sans-serif;
+  /* Wawatype / Playful Rounded Font：Huninn（粉圓體）為 Google Fonts 上真正存在的繁中可愛圓體，優先套用 */
+  --proto-font: "Huninn", "Zen Maru Gothic", "Kiwi Maru", "DFGirl-Medium", "Chalkboard SE", "Comic Sans MS", system-ui, sans-serif;
   
   /* High Saturation & Contrast Palette */
   --proto-bg-dark: #060b17;

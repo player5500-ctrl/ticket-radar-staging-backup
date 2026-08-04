@@ -1,14 +1,18 @@
-@import "https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap";
+@import "https://fonts.googleapis.com/css2?family=Huninn&family=Zen+Maru+Gothic:wght@400;700;900&display=swap";
 @import "./prototype/DesignTokens.css";
 @import "tailwindcss";
 
 :root {
   color-scheme: dark;
-  --proto-font: "Zen Maru Gothic", "Kiwi Maru", "DFGirl-Medium", "Chalkboard SE", "Comic Sans MS", system-ui, sans-serif;
+  /* 娃娃體：Huninn（粉圓體/JF Open 粉圓）是 Google Fonts 上真正存在、完整支援繁體中文的
+     可愛圓體，台灣網頁最常見的「娃娃體」代表字型，優先套用；
+     Zen Maru Gothic 補西文/日文假名的圓潤感，其餘為備援。 */
+  --proto-font: "Huninn", "Zen Maru Gothic", "Kiwi Maru", "DFGirl-Medium", "Chalkboard SE", "Comic Sans MS", system-ui, sans-serif;
   font-family: var(--proto-font);
   color: #eaf1f8;
   background: #060b17;
-  font-synthesis: none;
+  /* cwTeX Yuan 只有單一字重，允許瀏覽器合成粗體，維持標題的娃娃體厚實感 */
+  font-synthesis: weight;
   text-rendering: optimizeLegibility;
   --bg: #060b17;
   --bg-elevated: #0c192a;
