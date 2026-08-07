@@ -5,6 +5,7 @@ dist-worker/
 coverage/
 playwright-report/
 playwright-report-staging/
+playwright-report-local/
 test-results/
 output/playwright/
 .wrangler/

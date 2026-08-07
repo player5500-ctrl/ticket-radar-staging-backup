@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createPhase0Adapters, PHASE0_SOURCE_KEYS } from "./placeholder";
-import { validatePublicUrl } from "./phase0";
+import {
+  fetchAllPages,
+  MockApiAdapter,
+  resilientFetch,
+  validatePublicUrl,
+} from "./phase0";
 
 describe("Phase 0 event source adapters", () => {
   it("registers all matrix sources without making network calls", async () => {
@@ -26,5 +31,41 @@ describe("Phase 0 event source adapters", () => {
     expect(() =>
       validatePublicUrl("https://example.com", ["allowed.example"]),
     ).toThrow();
+  });
+
+  it("walks MockApiAdapter pages using cursors", async () => {
+    const outcome = await fetchAllPages(new MockApiAdapter(), { limit: 2 });
+    expect(outcome.status).toBe("success");
+    expect(outcome.pagesFetched).toBe(3);
+    expect(outcome.records.map((record) => record.externalId)).toEqual([
+      "mock-1",
+      "mock-2",
+      "mock-3",
+      "mock-4",
+      "mock-5",
+    ]);
+    expect(outcome.nextCursor).toBeNull();
+  });
+
+  it("retries a temporary MockApiAdapter failure", async () => {
+    const adapter = new MockApiAdapter({ transientFailureOnce: true });
+    const outcome = await resilientFetch(() => adapter.fetchRecent({ limit: 2 }), {
+      maxRetries: 2,
+    });
+    expect(outcome.status).toBe("success");
+    expect(outcome.attempts).toBe(2);
+    expect(outcome.result?.records).toHaveLength(2);
+  });
+
+  it("degrades gracefully after a MockApiAdapter rate limit", async () => {
+    const outcome = await fetchAllPages(
+      new MockApiAdapter({ rateLimitAfter: 1 }),
+      { limit: 2 },
+      { maxRetries: 2 },
+    );
+    expect(outcome.status).toBe("degraded");
+    expect(outcome.records).toHaveLength(2);
+    expect(outcome.pagesFetched).toBe(1);
+    expect(outcome.error).toContain("rate limit");
   });
 });

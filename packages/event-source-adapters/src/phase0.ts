@@ -10,6 +10,120 @@ export type Phase0AdapterContext = {
   timeoutMs?: number;
   allowedHosts?: string[];
 };
+export type ResilientFetchOptions = {
+  maxRetries?: number;
+  backoffMs?: number;
+};
+export type ResilientFetchOutcome = {
+  result: RawFetchResult | null;
+  status: "success" | "degraded";
+  attempts: number;
+  error: string | null;
+};
+
+export class MockApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "MockApiError";
+  }
+}
+
+const isRetryableFetchError = (error: unknown) => {
+  if (!error || typeof error !== "object") return false;
+  const status = (error as { status?: unknown }).status;
+  return status === 429 || (typeof status === "number" && status >= 500);
+};
+
+export async function resilientFetch(
+  fetcher: () => Promise<RawFetchResult>,
+  options: ResilientFetchOptions = {},
+): Promise<ResilientFetchOutcome> {
+  const maxRetries = Math.max(0, options.maxRetries ?? 2);
+  const backoffMs = Math.max(0, options.backoffMs ?? 0);
+  let attempts = 0;
+  let lastError: unknown = null;
+  while (attempts <= maxRetries) {
+    attempts += 1;
+    try {
+      return {
+        result: await fetcher(),
+        status: "success",
+        attempts,
+        error: null,
+      };
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableFetchError(error) || attempts > maxRetries) break;
+      if (backoffMs > 0) await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
+  }
+  return {
+    result: null,
+    status: "degraded",
+    attempts,
+    error: lastError instanceof Error ? lastError.message : "fetch failed",
+  };
+}
+
+export type PaginatedFetchOutcome = ResilientFetchOutcome & {
+  records: RawFetchResult["records"];
+  nextCursor: string | null;
+  pagesFetched: number;
+};
+
+export async function fetchAllPages(
+  adapter: Pick<EventSourceAdapter, "fetchRecent">,
+  params: { since?: string; limit: number },
+  options: ResilientFetchOptions & { maxPages?: number } = {},
+): Promise<PaginatedFetchOutcome> {
+  const records: RawFetchResult["records"] = [];
+  let cursor: string | undefined;
+  let pagesFetched = 0;
+  let totalAttempts = 0;
+  while (pagesFetched < (options.maxPages ?? 20)) {
+    const outcome = await resilientFetch(
+      () =>
+        adapter.fetchRecent(
+          cursor ? { ...params, cursor } : { ...params },
+        ),
+      options,
+    );
+    totalAttempts += outcome.attempts;
+    if (!outcome.result) {
+      return {
+        ...outcome,
+        attempts: totalAttempts,
+        records,
+        nextCursor: cursor ?? null,
+        pagesFetched,
+      };
+    }
+    pagesFetched += 1;
+    records.push(...outcome.result.records);
+    cursor = outcome.result.nextCursor ?? undefined;
+    if (!cursor) {
+      return {
+        ...outcome,
+        attempts: totalAttempts,
+        records,
+        nextCursor: null,
+        pagesFetched,
+      };
+    }
+  }
+  return {
+    result: null,
+    status: "degraded",
+    attempts: totalAttempts,
+    error: "maximum page limit reached",
+    records,
+    nextCursor: cursor ?? null,
+    pagesFetched,
+  };
+}
 export class ManualSourceAdapter implements EventSourceAdapter {
   readonly sourceKey = "manual";
   readonly name = "Manual source";
@@ -115,26 +229,49 @@ export class GenericJsonLdEventAdapter implements EventSourceAdapter {
   }
 }
 export class MockApiAdapter extends Phase0PlaceholderAdapter {
-  constructor() {
+  private calls = 0;
+  private transientFailureReturned = false;
+  constructor(
+    private readonly options: {
+      transientFailureOnce?: boolean;
+      rateLimitAfter?: number;
+    } = {},
+  ) {
     super("mock_api");
   }
   readonly sourceType = "api" as const;
-  fetchRecent(params: { since?: string; limit: number }): Promise<RawFetchResult> {
-    return Promise.resolve({
-      records: [
-        {
-          externalId: `mock-${params.limit}`,
-          sourceUrl: "https://mock.ticket-radar.invalid/events/1",
-          payload: JSON.stringify({
-            id: `mock-${params.limit}`,
-            name: "BIGBANG Mock Event",
-            startDate: "2026-09-01T19:00:00+08:00",
-          }),
-          fetchedAtUtc: new Date().toISOString(),
-        },
-      ],
+  fetchRecent(params: { since?: string; limit: number; cursor?: string }): Promise<RawFetchResult> {
+    void params.since;
+    this.calls += 1;
+    if (this.options.rateLimitAfter !== undefined && this.calls > this.options.rateLimitAfter)
+      throw new MockApiError("mock rate limit exceeded", 429);
+    if (this.options.transientFailureOnce && !this.transientFailureReturned) {
+      this.transientFailureReturned = true;
+      throw new MockApiError("mock temporary upstream failure", 503);
+    }
+    const page = Number.parseInt(params.cursor ?? "0", 10);
+    const start = Number.isFinite(page) ? page : 0;
+    const records = Array.from({ length: 5 }, (_, index) => ({
+      externalId: `mock-${index + 1}`,
+      sourceUrl: `https://mock.ticket-radar.invalid/events/${index + 1}`,
+      payload: JSON.stringify({
+        id: `mock-${index + 1}`,
+        name: `BIGBANG Mock Event ${index + 1}`,
+        startDate: "2026-09-01T19:00:00+08:00",
+      }),
       fetchedAtUtc: new Date().toISOString(),
+    })).slice(start, start + Math.max(1, params.limit));
+    const nextStart = start + records.length;
+    return Promise.resolve({
+      records,
+      fetchedAtUtc: new Date().toISOString(),
+      nextCursor: nextStart < 5 ? String(nextStart) : null,
     });
+  }
+
+  fetchByQuery(params: { query: string; limit: number; cursor?: string }) {
+    void params.query;
+    return this.fetchRecent(params);
   }
 }
 export function validatePublicUrl(value: string, allowedHosts?: string[]): URL {
