@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { ReauthNotice } from "./ReauthNotice";
@@ -6,6 +6,7 @@ import { api, isAuthError } from "../services/api";
 import "../prototype/DesignTokens.css";
 
 export function AppLayout() {
+  const location = useLocation();
   const sessionQuery = useQuery({
     queryKey: ["auth-session"],
     queryFn: api.session,
@@ -30,18 +31,28 @@ export function AppLayout() {
             <div className="proto-logo-badge">📡</div>
             <div className="proto-logo-text">
               <span className="proto-logo-title">追票雷達 Ticket Radar</span>
-              <span className="proto-logo-subtitle">OFFICIAL RELEASE</span>
+              <span className="proto-logo-subtitle">INTERNAL BETA</span>
             </div>
           </NavLink>
 
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <NavLink
+              className="proto-mode-pill"
+              to={`/feedback?from=${encodeURIComponent(location.pathname)}`}
+            >
+              🐞 回報問題
+            </NavLink>
             {isAdmin && (
               <NavLink className="proto-mode-pill" to="/admin">
                 ⚙️ 管理後台
               </NavLink>
             )}
             {!import.meta.env.DEV && sessionQuery.data && (
-              <button className="proto-mode-pill" type="button" onClick={() => void logout()}>
+              <button
+                className="proto-mode-pill"
+                type="button"
+                onClick={() => void logout()}
+              >
                 🚪 登出
               </button>
             )}
@@ -53,6 +64,12 @@ export function AppLayout() {
       <main id="main-content" className="proto-container">
         {needsReauth ? <ReauthNotice /> : <Outlet />}
       </main>
+
+      <footer className="beta-disclaimer" role="note">
+        <strong>INTERNAL CLOSED BETA</strong>
+        <span>目前為內部封閉測試版本，活動與售票資訊請以官方公告為準。</span>
+        <span>本服務不執行自動選票、自動送單或驗證碼操作。</span>
+      </footer>
 
       {/* 5-Item Mobile Bottom Navigation Bar */}
       <nav className="proto-bottom-nav" aria-label="主要行動導覽">
