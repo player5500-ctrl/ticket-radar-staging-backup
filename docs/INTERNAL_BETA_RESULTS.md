@@ -50,6 +50,27 @@
 | 手機版面 | ⚠️ **未完成** | 瀏覽器 resize 工具在本次環境下沒有正確觸發行動版 viewport，畫面仍以桌面寬度渲染，無法在本次驗收中確認手機版面，需要真人測試者用實機或正確的裝置模擬確認 |
 | 登出／重新登入資料保存 | ⚠️ **未完成** | 尚未實測此項目 |
 
+## 5b. Admin 權限保護（Claude 已親自驗證）
+
+### 已確認的事實
+
+- Product Owner 帳號實際身分（直接呼叫 `/api/v1/auth/session` 取得）：
+  - Email `player5500@gmail.com`、`role: "admin"`
+- `/admin` 頁面對 admin 正常開啟，顯示「管理後台」與 Beta 指標（歌手 4、活動 29、待確認活動 2、待處理回報 0、通知失敗 0）。
+- Admin API 對 admin 全部回 200：`/api/v1/admin/overview`、`/api/v1/admin/event-candidates`、`/api/v1/admin/event-sources`。
+- 後端授權為真：`workers/api/src/auth.ts` 的 `requireAdminId()` 每次都直接查 D1 的 `users.role`，非 admin 或非 active 一律回 **403 `ADMIN_REQUIRED`**，不是只靠前端隱藏按鈕。
+- 前端 `AdminGuard.tsx` 另外在 `role !== "admin"` 時 `Navigate to="/"`，屬第二層保護。
+- 新使用者第一次登入時（`auth.ts` 第 118 行）`INSERT INTO users ... role` 硬寫死 `'user'`，**不可能有人自動變成 admin**。
+
+### 尚未驗證的部分
+
+- 三位測試者的實際 role 值尚無法直接查看：Beta 指標「最近登入使用者 = 1」，代表**目前只有 Product Owner 登入過**，另外三位在 D1 裡還沒有 user 資料列。
+- 因此「一般使用者被 403 擋在 `/admin` 外」目前是**程式碼層面確認**，還缺一次真人實測。等測試者登入後，請他們直接開 `https://ticket-radar-web-staging.pages.dev/admin`，正常行為應該是被踢回首頁、且看不到「⚙️ 管理後台」按鈕。
+- Claude 的沙箱沒有 Cloudflare 憑證（無 wrangler），無法直接跑 D1 查詢。若要用 D1 確認角色，請在 Windows 本機執行：
+  ```
+  wrangler d1 execute <DB_NAME> --remote --command "SELECT email_normalized, role, status FROM users WHERE deleted_at_utc IS NULL"
+  ```
+
 ## 6. 發現的 Bug（詳見 `BETA_BUG_BACKLOG.md`）
 
 - **BUG-01（P1）**：「建立購票任務」精靈的「單張預算上限」欄位，程式碼裡用 `useState("4800")` 當初始值（`ProtoTaskWizardModal.tsx` 第 18 行），畫面上跟 placeholder 文字一模一樣（`例如: 4800`），使用者無法從外觀分辨這是「真的已經有值」還是「範例提示文字」。如果測試者直接點進欄位輸入自己的預算而沒有先清空，會變成兩段數字接在一起（例如打「1500」變成「45001500」），送出後端會用 422 拒絕（`Number must be less than or equal to 1000000`），但前端完全沒有顯示任何錯誤訊息，畫面看起來就像按鈕沒反應。這會讓測試者誤以為「建立購票任務」這個必測核心流程壞掉。
@@ -57,8 +78,8 @@
 ## 7. 尚未完成、需要 Vanny／真人測試者協助的項目
 
 1. 3 位測試者（player5500、andy10302744、Chocolatesc）本人登入與核心流程實測 — 需要他們自己收 Email OTP，Claude 無法代勞。
-2. D1 直接查角色：確認 3 位測試者 `role='user'`、Product Owner `role='admin'` — 需要 wrangler D1 存取權限（本次 Claude 的 sandbox 沒有 Cloudflare 憑證，需在 Windows 本機執行 `wrangler d1 execute` 或改用 `/admin` 後台頁面查詢使用者角色）。
-3. 一般使用者（非 admin）是否真的無法進入 `/admin` — 需要用一般測試者帳號登入後實測（同樣受限於 Claude 沒有他們的信箱）。
+2. D1 直接查角色：Product Owner `role='admin'` 已確認（見 §5b）；3 位測試者尚未登入過，D1 內還沒有他們的資料列，等他們登入後可用 §5b 的 wrangler 指令核對 `role='user'`。
+3. 一般使用者（非 admin）是否真的無法進入 `/admin` — 程式碼層面已確認 403 保護為真（見 §5b），仍缺一次真人實測。
 4. User A / User B 資料隔離 — 需要至少兩位不同角色的真人各自登入後比對。
 5. 手動新增購票紀錄的入口 — 需要再確認一次是否只能透過瀏覽器 Extension 建立。
 6. 手機版面與橫向捲動檢查 — 需要真人用實機或正確的裝置模擬完成。
