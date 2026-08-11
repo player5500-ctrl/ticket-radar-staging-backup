@@ -14,6 +14,8 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/.wrangler/**",
       "**/playwright-report/**",
+      "**/playwright-report-staging/**",
+      "**/playwright-report-local/**",
       "**/test-results/**",
     ],
   },

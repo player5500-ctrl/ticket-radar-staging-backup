@@ -21,12 +21,13 @@ test("Staging PWA 可從真實 Worker 載入公開活動", async ({ page }, test
 
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "重要售票時間， 不再錯過。" }),
+    page.getByRole("heading", { name: /演唱會開賣時刻/ }),
   ).toBeVisible();
   try {
-    const upcoming = page.getByRole("region", { name: "即將登場" });
-    await expect(upcoming).toBeVisible();
-    await expect(upcoming.getByText("星際航線：台北站")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /即將開賣賽道/ }),
+    ).toBeVisible();
+    await expect(page.getByText("星際航線：台北站")).toBeVisible();
   } finally {
     await testInfo.attach("network-diagnostics", {
       body: diagnostics.join("\n"),
@@ -40,7 +41,9 @@ test("Staging SPA 直達路由、manifest 與 service worker 可用", async ({
   request,
 }) => {
   await page.goto("/search");
-  await expect(page.getByRole("heading", { name: "搜尋演出訊號" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "搜尋全台演出訊號" }),
+  ).toBeVisible();
 
   const manifest = await request.get("/manifest.webmanifest");
   expect(manifest.status()).toBe(200);
