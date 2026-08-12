@@ -3,19 +3,29 @@ import type { TicketTaskInput } from "@ticket-radar/shared";
 
 export type TaskWizardValues = Omit<TicketTaskInput, "eventId">;
 
+/** 後端 budgetTwd 上限（與 shared schema 一致），超過會被 422 拒絕。 */
+const MAX_BUDGET_TWD = 1_000_000;
+
 export function ProtoTaskWizardModal({
   eventName,
   onClose,
   onSubmit,
+  errorMessage = null,
+  isSubmitting = false,
 }: {
   eventName: string;
   onClose: () => void;
   onSubmit: (values: TaskWizardValues) => void;
+  /** 送出失敗時的錯誤訊息；null 表示沒有錯誤（BUG-01：原本失敗完全沒有提示）。 */
+  errorMessage?: string | null;
+  isSubmitting?: boolean;
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1: Budget & Tickets
-  const [budget, setBudget] = useState("4800");
+  // 初始值必須是空字串：若預先填入 "4800"，畫面看起來跟 placeholder「例如: 4800」
+  // 一模一樣，使用者未清空就輸入會變成拼接後的過大數字（BUG-01）。
+  const [budget, setBudget] = useState("");
   const [ticketCount, setTicketCount] = useState("2");
 
   // Step 2: Sessions & Areas
@@ -106,6 +116,8 @@ export function ProtoTaskWizardModal({
               </label>
               <input
                 type="number"
+                min={0}
+                max={MAX_BUDGET_TWD}
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 placeholder="例如: 4800"
@@ -308,17 +320,35 @@ export function ProtoTaskWizardModal({
               已了解並明白實際購票仍需手動操作
             </label>
 
+            {errorMessage ? (
+              <p
+                role="alert"
+                style={{
+                  margin: 0,
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  background: "rgba(255, 117, 151, 0.12)",
+                  border: "1px solid #ff7597",
+                  color: "#ff7597",
+                  fontSize: "0.82rem",
+                  lineHeight: 1.5,
+                }}
+              >
+                建立任務失敗：{errorMessage}
+              </p>
+            ) : null}
+
             <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
               <button className="proto-btn proto-btn-ghost" onClick={() => setStep(2)} style={{ flex: 1 }}>
                 ← 上一步
               </button>
               <button
                 className="proto-btn proto-btn-battle"
-                disabled={!agreedDisclaimer}
+                disabled={!agreedDisclaimer || isSubmitting}
                 onClick={handleSubmit}
-                style={{ flex: 2, opacity: agreedDisclaimer ? 1 : 0.5 }}
+                style={{ flex: 2, opacity: agreedDisclaimer && !isSubmitting ? 1 : 0.5 }}
               >
-                🚀 完成建立任務
+                {isSubmitting ? "正在建立…" : "🚀 完成建立任務"}
               </button>
             </div>
           </div>

@@ -225,6 +225,8 @@ export function ProtoDetailPage() {
           eventName={event.name}
           onClose={() => setIsWizardOpen(false)}
           onSubmit={(values) => taskMutation.mutate(values)}
+          errorMessage={taskMutation.error ? taskMutation.error.message : null}
+          isSubmitting={taskMutation.isPending}
         />
       )}
     </div>
