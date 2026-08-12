@@ -55,6 +55,30 @@ wrangler d1 execute ticket-radar-db-staging --remote --command "UPDATE events SE
 
 清掉後詳情頁的售票連結區塊會自動不顯示（前端已有空值判斷）。另可考慮把該活動的驗證狀態改回「資料待確認」，或在名稱維持 TEST 字樣以利辨識。
 
+## BUG-06（P1）/admin 頁面崩潰：前後端版本不匹配 — 待部署 Worker 修復
+
+**現象**：2026-08-12 開 `/admin` 出現「Unexpected Application Error! Cannot read properties of undefined (reading 'windowDays')」。admin 帳號（Product Owner）本人也一樣崩潰，**確認不是權限突破**。
+
+**根因**：Web 端（2026-08-12 重新部署的 bundle）的 `AdminPage.tsx` 讀 `overview.data.betaMetrics.windowDays`，但線上 Staging Worker 是舊版，`/api/v1/admin/overview` 回應只有 `counts, adapterVersions, recentEvents, recentAuditLogs`，沒有 `betaMetrics`。Codex 的 Beta 改版同時動了前端與 Worker，但 Worker 未部署到 Staging；本日兩次 Pages 部署把「預期新 Worker」的前端推上線後，不匹配就爆了。
+
+**修法**（Windows 本機執行，Staging only）：
+
+```
+cd /d C:\ticket-radar\workers\api
+wrangler d1 migrations apply ticket-radar-db-staging --env staging --remote
+wrangler deploy --env staging
+```
+
+**驗證**：`/api/v1/admin/overview` 回應應含 `betaMetrics.windowDays=7`，`/admin` 頁正常渲染。
+
+## BUG-07（P2）手機版頁首跑版 — 記錄排程，不擋 Beta
+
+**現象**：手機（約 390px 寬）開站，頁首的「回報問題／管理後台／登出」按鈕變成一字直排的長膠囊、logo 文字逐字換行，「登出」被切出畫面右緣。功能仍可用，但明顯跑版。
+
+**根因方向**：`proto-header` 在窄螢幕沒有對應的 RWD 規則（按鈕文字未縮寫、flex 未換行處理），待排程修復時檢查 `styles.css`／`DesignTokens.css` 的斷點。
+
+**分級**：P2（UI 阻礙但可操作），依規則記錄並排程，Beta 繼續。
+
 ## 未分級／待補充（需真人測試者回報後才能分級）
 
 - 3 位一般測試者登入與核心流程結果
