@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { EventStatus, SearchQuery } from "@ticket-radar/shared";
@@ -54,6 +54,19 @@ export function ProtoSearchPage() {
     setParams(next, { replace: true });
   }
 
+  // BUG-04 修復：關鍵字欄位不能直接綁 URL 參數。
+  // setParams() 是非同步的 router 更新，controlled input 的值會在下一次 render
+  // 才回填，中文輸入法（注音/倉頡等 IME）的組字過程會被打斷，
+  // 導致注音符號直接掉進欄位、無法選字。
+  // 解法：欄位值用本地 state，組字中（composition）不同步 URL，
+  // 組字結束或一般輸入時才把值寫回 URL 參數。
+  const [keyword, setKeyword] = useState(query.q);
+  const isComposingRef = useRef(false);
+  useEffect(() => {
+    // URL 參數被外部改變時（例如按「清空」或返回導覽）同步回欄位。
+    if (!isComposingRef.current) setKeyword(query.q);
+  }, [query.q]);
+
   const totalResults =
     (searchResult.data?.events.length ?? 0) + (searchResult.data?.artists.length ?? 0);
 
@@ -83,8 +96,18 @@ export function ProtoSearchPage() {
       <div style={{ display: "flex", gap: "8px" }}>
         <input
           type="text"
-          value={query.q}
-          onChange={(e) => updateParam("q", e.target.value)}
+          value={keyword}
+          onChange={(e) => {
+            setKeyword(e.target.value);
+            if (!isComposingRef.current) updateParam("q", e.target.value);
+          }}
+          onCompositionStart={() => {
+            isComposingRef.current = true;
+          }}
+          onCompositionEnd={(e) => {
+            isComposingRef.current = false;
+            updateParam("q", e.currentTarget.value);
+          }}
           placeholder="輸入歌手如 Night Orbit、場館如 台北流行音樂中心..."
           style={{
             flex: 1,

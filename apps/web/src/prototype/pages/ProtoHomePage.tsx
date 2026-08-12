@@ -34,6 +34,9 @@ export function ProtoHomePage() {
             type="text"
             placeholder="搜尋歌手、活動名稱、場館或城市..."
             onKeyDown={(e) => {
+              // BUG-04：中文輸入法組字中按 Enter 是「選字」，不是送出搜尋。
+              // isComposing / keyCode 229 代表 IME 組字中，必須忽略。
+              if (e.nativeEvent.isComposing || e.keyCode === 229) return;
               if (e.key === "Enter") {
                 const val = (e.target as HTMLInputElement).value;
                 void navigate(val ? `/search?q=${encodeURIComponent(val)}` : "/search");
