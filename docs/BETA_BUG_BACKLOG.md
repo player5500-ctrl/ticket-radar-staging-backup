@@ -41,6 +41,20 @@ P0＝立即停止 Beta；P1＝修復後再繼續；P2＝可持續測試但需排
 - 情境 B（正常值 `2000` 送出）：API 回 200，導向 `/tasks`，任務 `budgetTwd: 2000` 正確保存。✅
 - 欄位初始為空、`min=0 max=1000000` 已生效。✅
 
+## BUG-05（P3）測試活動「BIGBANG TEST LIVE 2026」售票連結指向假網域 — 待資料修正
+
+**現象**：Product Owner 實測回報，該活動詳情頁點「前往售票平台頁面」出現 `DNS_PROBE_FINISHED_NXDOMAIN`（網址是 `example.invalid`）。
+
+**根因**：這是早期測試建立的假活動，`official_ticket_url` 存的是佔位假網域。程式本身正常（有網址就顯示連結）；問題在資料。且該活動掛「官方驗證」徽章，容易讓 Beta 測試者誤判為真活動、回報「連結壞掉」。
+
+**建議修法**（資料層，Windows 本機執行）：
+
+```
+wrangler d1 execute ticket-radar-db-staging --remote --command "UPDATE events SET official_ticket_url = NULL, official_event_url = NULL WHERE name = 'BIGBANG TEST LIVE 2026'"
+```
+
+清掉後詳情頁的售票連結區塊會自動不顯示（前端已有空值判斷）。另可考慮把該活動的驗證狀態改回「資料待確認」，或在名稱維持 TEST 字樣以利辨識。
+
 ## 未分級／待補充（需真人測試者回報後才能分級）
 
 - 3 位一般測試者登入與核心流程結果
